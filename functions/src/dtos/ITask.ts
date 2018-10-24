@@ -3,6 +3,6 @@ export interface ITask {
     readonly name: string;
     readonly description: string;
     readonly listId: string;
-    readonly prevTask: string;
-    readonly nextTask: string;
+    readonly prevTaskId: string;
+    readonly nextTaskId: string;
 }
