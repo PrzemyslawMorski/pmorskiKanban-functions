@@ -2,6 +2,7 @@ export interface ITask {
     readonly id: string;
     readonly name: string;
     readonly description: string;
-    readonly prevTask: ITask | null;
-    readonly nextTask: ITask | null;
+    readonly listId: string;
+    readonly prevTask: string;
+    readonly nextTask: string;
 }

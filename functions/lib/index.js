@@ -32,9 +32,10 @@ exports.getBoard = functions.https.onCall(({ boardId, userId }) => {
             reject("Board id or user id is empty.");
             return;
         }
-        admin.firestore()
+        const boardRef = admin.firestore()
             .collection("boards")
-            .doc(boardId).get()
+            .doc(boardId);
+        boardRef.get()
             .then((doc) => {
             if (doc.exists) {
                 const docData = doc.data();
@@ -42,9 +43,58 @@ exports.getBoard = functions.https.onCall(({ boardId, userId }) => {
                     reject("Board can't be accessed.");
                     return;
                 }
-                // TODO if not an owner or member reject access
-                resolve(doc.data());
-                return;
+                const board = {
+                    id: doc.id,
+                    name: docData.name,
+                    ownerId: docData.ownerId,
+                    lists: []
+                };
+                boardRef.getCollections()
+                    .then((boardRefCollections) => {
+                    const lists = boardRefCollections.find(collection => collection.id === "lists");
+                    if (lists !== undefined) {
+                        lists.get()
+                            .then(listsDocs => {
+                            listsDocs.forEach((listDoc) => {
+                                const listData = listDoc.data();
+                                const list = {
+                                    id: listDoc.id,
+                                    name: listData.name,
+                                    boardId: listData.boardId,
+                                    nextListId: listData.nextListId,
+                                    prevListId: listData.prevListId,
+                                    tasks: []
+                                };
+                                listDoc.ref.getCollections()
+                                    .then((listCollections) => {
+                                    const tasks = listCollections.find(collection => collection.id === "tasks");
+                                    if (tasks !== undefined) {
+                                        tasks.get()
+                                            .then((tasksDocs) => {
+                                            tasksDocs.forEach((taskDoc) => {
+                                                const taskData = taskDoc.data();
+                                                const task = {
+                                                    id: taskDoc.id,
+                                                    name: taskData.name,
+                                                    description: taskData.description,
+                                                    listId: list.id,
+                                                    nextTask: taskData.nextTaskId,
+                                                    prevTask: taskData.prevTaskId
+                                                };
+                                                list.tasks.push(task);
+                                                console.log("Pushed task " + task.id + " to list " + list.id);
+                                            });
+                                            resolve(board);
+                                        });
+                                    }
+                                });
+                                board.lists.push(list);
+                                console.log("Pushed list " + list.id + " to board " + board.id);
+                            });
+                        });
+                    }
+                });
+                resolve(board);
             }
             else {
                 reject("Board doesn't exist.");

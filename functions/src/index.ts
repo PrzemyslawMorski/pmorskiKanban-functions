@@ -58,56 +58,79 @@ export const getBoard = functions.https.onCall(({ boardId, userId }: { boardId: 
             lists: []
           }
 
-          boardRef.getCollections()
-            .then((boardRefCollections) => {
-              const lists = boardRefCollections.find(collection => collection.id === "lists");
+          const allPromises = [];
 
-              if (lists !== undefined) {
-                lists.get()
-                  .then(listsDocs => {
-                    listsDocs.forEach((listDoc) => {
-                      const listData = listDoc.data();
+          const getListsPromise = boardRef.getCollections();
+          allPromises.push(getListsPromise);
 
-                      const list: IList = {
-                        id: listDoc.id,
-                        name: listData.name,
-                        boardId: listData.boardId,
-                        nextList: listData.nextListId,
-                        prevList: listData.prevListId,
-                        tasks: []
-                      }
+          getListsPromise.then((boardRefCollections) => {
+            const listsCollection = boardRefCollections.find(collection => collection.id === "lists");
 
-                      listDoc.ref.getCollections()
-                        .then((listCollections) => {
-                          const tasks = listCollections.find(collection => collection.id === "tasks");
+            const lists = [];
 
-                          if (tasks !== undefined) {
-                            tasks.get()
-                              .then((tasksDocs) => {
-                                tasksDocs.forEach((taskDoc) => {
-                                  const taskData = taskDoc.data();
+            if (listsCollection !== undefined) {
+              const getListsCollectionPromise = listsCollection.get();
+              allPromises.push(getListsCollectionPromise);
 
-                                  const task: ITask = {
-                                    id: taskDoc.id,
-                                    name: taskData.name,
-                                    description: taskData.description,
-                                    nextTask: taskData.nextTaskId,
-                                    prevTask: taskData.prevTaskId
-                                  }
+              getListsCollectionPromise
+                .then(listsDocs => {
+                  listsDocs.forEach((listDoc) => {
+                    const listData = listDoc.data();
+                    const listRef = listDoc.ref;
 
-                                  list.tasks.push(task);
-                                })
-                              })
-                          }
-                        })
+                    const getTasksCollectionPromise = listRef.getCollections();
+                    allPromises.push(getTasksCollectionPromise);
 
-                      board.lists.push(list);
-                    });
-                  })
-              }
-            });
+                    getTasksCollectionPromise
+                      .then((listCollections) => {
+                        const tasksCollection = listCollections.find(collection => collection.id === "tasks");
+                        const tasks = [];
 
-          resolve(board);
+                        if (tasksCollection !== undefined) {
+                          const getTasksPromise = tasksCollection.get();
+                          allPromises.push(getTasksPromise);
+
+                          getTasksPromise
+                            .then((tasksDocs) => {
+                              tasksDocs.forEach((taskDoc) => {
+                                const taskData = taskDoc.data();
+
+                                const task: ITask = {
+                                  id: taskDoc.id,
+                                  name: taskData.name,
+                                  description: taskData.description,
+                                  listId: listRef.id,
+                                  nextTask: taskData.nextTaskId,
+                                  prevTask: taskData.prevTaskId
+                                };
+
+                                tasks.push(task);
+                                console.log("Pushed task " + task.id + " to list " + listRef.id)
+                              });
+                            });
+                        }
+
+                        const list: IList = {
+                          id: listDoc.id,
+                          name: listData.name,
+                          boardId: boardRef.id,
+                          nextListId: listData.nextListId,
+                          prevListId: listData.prevListId,
+                          tasks: tasks
+                        };
+
+                        lists.push(list);
+                        console.log("Pushed list " + list.id + " to board " + board.id)
+                      });
+                  });
+                });
+            }
+
+            Promise.all(allPromises)
+              .then(() => {
+                resolve(board)
+              });
+          });
         } else {
           reject("Board doesn't exist.")
           return;

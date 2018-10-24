@@ -5,6 +5,6 @@ export interface IList {
     readonly id: string;
     readonly boardId: string;
     readonly tasks: ITask[];
-    readonly prevList: IList | null;
-    readonly nextList: IList | null;
+    readonly prevListId: string;
+    readonly nextListId: string;
 }
