@@ -90,8 +90,28 @@ export const getBoardService = (boardId: string, userId: string) => {
                                                         lists: lists
                                                     }
                                                     resolve(board);
+                                                })
+                                                .catch((error) => {
+                                                    console.log(error);
+                                                    const board: IBoard = {
+                                                        id: boardDoc.id,
+                                                        name: boardData.name,
+                                                        ownerId: boardData.ownerId,
+                                                        lists: []
+                                                    }
+                                                    resolve(board);
                                                 });
                                         })
+                                        .catch((error) => {
+                                            console.log(error);
+                                            const board: IBoard = {
+                                                id: boardDoc.id,
+                                                name: boardData.name,
+                                                ownerId: boardData.ownerId,
+                                                lists: []
+                                            }
+                                            resolve(board);
+                                        });
                                 });
                         } else {
                             const board: IBoard = {
