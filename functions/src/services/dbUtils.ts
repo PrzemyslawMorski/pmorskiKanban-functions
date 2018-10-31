@@ -1,6 +1,19 @@
 import { DocumentSnapshot } from "firebase-functions/lib/providers/firestore";
 import * as admin from "firebase-admin";
 
+export const getListSnap = (boardSnap: DocumentSnapshot, listId: string): Promise<DocumentSnapshot> => {
+    return new Promise((resolve, reject) => {
+        const listDoc = boardSnap.ref.collection("lists").doc(listId);
+        listDoc.get().then((listDocSnap) => {
+            resolve(listDocSnap);
+        }).catch(err => {
+            console.log(err);
+            reject("List can't be accessed. Please contact the support staff.")
+            return;
+        });
+    });
+};
+
 export const getBoardSnap = (boardId: string, ownerId: string): Promise<DocumentSnapshot> => {
     return new Promise((resolve, reject) => {
         const boardDoc = admin.firestore().collection("boards").doc(boardId);
@@ -53,15 +66,4 @@ export const getPrevCurrentNextListSnaps = (boardSnap: DocumentSnapshot, listId:
     });
 }
 
-export const getListSnap = (boardSnap: DocumentSnapshot, listId: string): Promise<DocumentSnapshot> => {
-    return new Promise((resolve, reject) => {
-        const listDoc = boardSnap.ref.collection("lists").doc(listId);
-        listDoc.get().then((listDocSnap) => {
-            resolve(listDocSnap);
-        }).catch(err => {
-            console.log(err);
-            reject("List can't be accessed. Please contact the support staff.")
-            return;
-        });
-    });
-};
+
