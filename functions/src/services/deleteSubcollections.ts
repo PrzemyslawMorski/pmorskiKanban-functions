@@ -1,5 +1,6 @@
 
 export const deleteSubcollectionsService = (snap: FirebaseFirestore.DocumentSnapshot) => {
+    console.log("Started deleting subcollections of " + snap.id);
     snap.ref.getCollections()
         .then(collections => {
             collections.forEach(collection => {
@@ -8,6 +9,7 @@ export const deleteSubcollectionsService = (snap: FirebaseFirestore.DocumentSnap
                         docSnaps.forEach((docSnap => {
                             docSnap.ref.delete()
                                 .then(() => {
+                                    console.log("Finished deleting subcollections of " + snap.id);
                                     deleteSubcollectionsService(docSnap);
                                 })
                                 .catch((err) => {
