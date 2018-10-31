@@ -5,7 +5,7 @@ export const renameListService = (boardId: string, listId: string, listName: str
     return new Promise((resolve, reject) => {
         getBoardSnap(boardId, ownerId).then((boardSnap) => {
             getListSnap(boardSnap, listId).then((listSnap) => {
-                if (listSnap.exists) {
+                if (listSnap !== null) {
                     listSnap.ref.update({ name: listName }).then(() => {
                         resolve({ boardId, listId, listName });
                         return;
@@ -15,17 +15,17 @@ export const renameListService = (boardId: string, listId: string, listName: str
                         return;
                     });
                 } else {
-                    reject("List couldn't be renamed. Please contact our support staff.")
+                    reject("List doesn't exist. Please contact our support staff.")
                     return;
                 }
             }).catch((err) => {
                 console.log(err);
-                reject("List couldn't be renamed. Please contact our support staff.")
+                reject("List doesn't exist. Please contact our support staff.")
                 return;
             });
         }).catch((err) => {
             console.log(err);
-            reject("List couldn't be renamed. Please contact our support staff.")
+            reject("Board can't be accessed. Please contact our support staff.")
             return;
         });
     });
