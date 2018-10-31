@@ -14,7 +14,6 @@ export const deleteBoardService = (boardId: string, ownerId: string): Promise<{ 
                     boardDoc.delete()
                         .then(() => {
                             deleteSubcollectionsService(boardDocSnap);
-
                             getBoardMiniaturesService(ownerId)
                                 .then((boardMiniatures) => {
                                     resolve({ boardMiniatures });

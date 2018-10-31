@@ -8,7 +8,6 @@ import { createBoardService } from "./services/createBoard";
 import { CallableContext } from "firebase-functions/lib/providers/https";
 import { deleteBoardService } from "./services/deleteBoard";
 import { createListService } from "./services/createList";
-import { deleteSubcollectionsService } from "./services/deleteSubcollections";
 import { deleteListService } from "./services/deleteList";
 
 admin.initializeApp();
@@ -44,5 +43,3 @@ export const createList = functions.https.onCall((data: { boardId: string, listN
 export const deleteList = functions.https.onCall((data: { boardId: string, listId: string }, context: CallableContext) => {
   return deleteListService(data.boardId, data.listId, context.auth.uid);
 })
-
-
