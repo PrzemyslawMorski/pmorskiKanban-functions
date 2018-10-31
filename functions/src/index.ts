@@ -6,8 +6,10 @@ import { getBoardService } from "./services/getBoard";
 import { setBoardNameService } from "./services/setBoardName";
 import { createBoardService } from "./services/createBoard";
 import { CallableContext } from "firebase-functions/lib/providers/https";
-import { deleteBoardService, deleteSubcollectionsService } from "./services/deleteBoard";
+import { deleteBoardService } from "./services/deleteBoard";
 import { createListService } from "./services/createList";
+import { deleteSubcollectionsService } from "./services/deleteSubcollections";
+import { deleteListService } from "./services/deleteList";
 
 admin.initializeApp();
 
@@ -35,12 +37,12 @@ export const deleteBoard = functions.https.onCall((data: { boardId: string }, co
   return deleteBoardService(data.boardId, context.auth.uid);
 });
 
-export const onDeleteBoard = functions.firestore
-  .document('boards/{boardId}')
-  .onDelete((snap) => {
-    deleteSubcollectionsService(snap);
-  });
-
 export const createList = functions.https.onCall((data: { boardId: string, listName: string }, context: CallableContext) => {
   return createListService(data.boardId, data.listName, context.auth.uid);
 });
+
+export const deleteList = functions.https.onCall((data: { boardId: string, listId: string }, context: CallableContext) => {
+  return deleteListService(data.boardId, data.listId, context.auth.uid);
+})
+
+
