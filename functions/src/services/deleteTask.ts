@@ -18,15 +18,15 @@ export const deleteTaskService = (boardId: string, listId: string, taskId: strin
 
                     if (prev !== null && next !== null) { //both exist
                         batch.update(prev.ref, { nextTaskId: next.id });
-                        batch.update(next.ref, { prevTaskId: next.id });
+                        batch.update(next.ref, { prevTaskId: prev.id });
                         batch.delete(curr.ref);
-                    } else if (prev !== null && next === null) { // only next exists
-                        batch.update(prev.ref, { nextTaskId: "" });
-                        batch.delete(curr.ref);
-                    } else if (prev === null && next !== null) { // only prev exists
+                    } else if (prev === null && next !== null) { // first task deleted
                         batch.update(next.ref, { prevTaskId: "" });
                         batch.delete(curr.ref);
-                    } else if (prev === null && next === null) { // both dont exist
+                    } else if (prev !== null && next === null) { // last task deleted
+                        batch.update(prev.ref, { nextTaskId: "" });
+                        batch.delete(curr.ref);
+                    } else if (prev === null && next === null) { // only task deleted
                         batch.delete(curr.ref);
                     }
 
