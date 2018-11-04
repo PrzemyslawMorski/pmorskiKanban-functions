@@ -10,8 +10,15 @@ import { deleteBoardService } from "./services/deleteBoard";
 import { createListService } from "./services/createList";
 import { deleteListService } from "./services/deleteList";
 import { renameListService } from "./services/renameList";
+import { createTaskService } from "./services/createTask";
+import { deleteTaskService } from "./services/deleteTask";
 
 admin.initializeApp();
+
+const firestore = admin.firestore();
+const settings = {/* your settings... */ timestampsInSnapshots: true };
+firestore.settings(settings);
+
 
 export const getBoardMiniatures = functions.https.onCall((data: any, context: CallableContext) => {
   return getBoardMiniaturesService(context.auth.uid);
@@ -48,3 +55,19 @@ export const deleteList = functions.https.onCall((data: { boardId: string, listI
 export const renameList = functions.https.onCall((data: { boardId: string, listId: string, listName: string }, context: CallableContext) => {
   return renameListService(data.boardId, data.listId, data.listName, context.auth.uid);
 })
+
+export const createTask = functions.https.onCall((data: { boardId: string, listId: string, taskName: string }, context: CallableContext) => {
+  return createTaskService(data.boardId, data.listId, data.taskName, context.auth.uid);
+});
+
+// export const createTaskTest = functions.https.onCall((data: { boardId: string, listId: string, taskName: string, ownerId: string }) => {
+//   return createTaskService(data.boardId, data.listId, data.taskName, data.ownerId);
+// });
+
+export const deleteTask = functions.https.onCall((data: { boardId: string, listId: string, taskId: string }, context: CallableContext) => {
+  return deleteTaskService(data.boardId, data.listId, data.taskId, context.auth.uid);
+})
+
+// export const deleteTaskTest = functions.https.onCall((data: { boardId: string, listId: string, taskId: string, ownerId: string }) => {
+//   return deleteTaskService(data.boardId, data.listId, data.taskId, data.ownerId);
+// })

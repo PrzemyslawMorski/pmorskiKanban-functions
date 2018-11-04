@@ -37,7 +37,7 @@ export const deleteListService = (boardId: string, listId: string, ownerId: stri
                 console.log(err);
                 reject("List doesn't exist.")
                 return;
-            })
+            });
         }).catch((err) => {
             console.log(err);
             reject("Board can't be accessed.")
