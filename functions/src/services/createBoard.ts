@@ -1,41 +1,65 @@
 import * as admin from "firebase-admin";
-import { IBoardMiniature } from "../dtos/IBoardMiniature";
 import { IBoard } from "../dtos/IBoard";
-import { getBoardMiniaturesService } from "./getBoardMiniatures";
+import { ICreateBoardResponse } from "../dtos/responses";
 
-export const createBoardService = (boardName: string, ownerId: string): Promise<{ board: IBoard, boardMiniatures: IBoardMiniature[] }> => {
+export const createBoardService = (boardName: string, userId: string): Promise<ICreateBoardResponse> => {
     return new Promise((resolve, reject) => {
-        const boardsCollection = admin.firestore().collection("boards");
+        if (boardName === "" || boardName === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "Board's name was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
 
-        const boardData = {
-            name: boardName,
-            ownerId: ownerId,
+        if (userId === "" || userId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "User's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
+
+        const response: ICreateBoardResponse = {
+            newBoard: null,
         };
 
-        boardsCollection.add(boardData)
-            .then((boardRef) => {
-                const board: IBoard = {
-                    id: boardRef.id,
-                    name: boardName,
-                    ownerId: ownerId,
-                    lists: [],
-                };
+        const boardsCollection = admin.firestore().collection("boards");
+        const boardData = {
+            name: boardName,
+            ownerId: userId,
+            members: [userId],
+        };
 
-                getBoardMiniaturesService(ownerId)
-                    .then((boardMiniatures) => {
-                        resolve({ board, boardMiniatures });
-                        return;
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                        reject("Board was created but there was an error getting your board miniatures. Please contact our support staff.");
-                        return;
-                    });
-            })
-            .catch((error) => {
-                console.log(error);
-                reject("Error creating board. Please contact our support staff.");
-                return;
+        const boardRef = boardsCollection.doc();
+
+        boardRef.set(boardData).then(() => {
+            const board: IBoard = {
+                id: boardRef.id,
+                name: boardName,
+                owner: true,
+                lists: [],
+            };
+
+            response.newBoard = board;
+            resolve(response);
+        }).catch((error) => {
+            console.error("Error setting board data in board " + boardRef.id);
+            console.error(error);
+
+            boardRef.delete().catch((deleteErr) => {
+                console.error("Error deleting board " + boardRef.id);
+                console.error(deleteErr);
             });
+
+            const rejectResponse = {
+                status: 'internal',
+                message: "Board was not created. There is a problem with the database. Please try again later.",
+            };
+            reject(rejectResponse);
+            return;
+        });
     });
 }

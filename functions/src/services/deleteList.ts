@@ -1,14 +1,55 @@
 import * as admin from "firebase-admin";
 import { deleteSubcollectionsService } from "./deleteSubcollections";
-import { getBoardSnap, getPrevCurrentNextListSnaps } from "./dbUtils";
+import { getBoardSnap, getPrevCurrentNextListSnaps, isOwner } from "./dbUtils";
+import { IDeleteListResponse } from "../dtos/responses";
 
-export const deleteListService = (boardId: string, listId: string, ownerId: string) => {
+export const deleteListService = (boardId: string, listId: string, userId: string): Promise<IDeleteListResponse> => {
+
+
     return new Promise((resolve, reject) => {
-        getBoardSnap(boardId, ownerId).then((boardSnap) => {
-            console.log('got board snap of board ' + boardId);
-            getPrevCurrentNextListSnaps(boardSnap, listId).then(({ prev, curr, next }) => {
-                console.log('got prev curr next snaps of list ' + listId);
+        if (boardId === "" || boardId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
 
+        if (listId === "" || listId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "List's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
+
+        if (userId === "" || userId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "User's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
+
+        const response: IDeleteListResponse = {
+            boardId: boardId,
+            listId: listId,
+        }
+
+        getBoardSnap(boardId, userId).then((boardSnap) => {
+            if (!isOwner(boardSnap, userId)) {
+                const rejectResponse = {
+                    status: 'permission-denied',
+                    message: "You can't delete lists in a board you do not own.",
+                };
+                reject(rejectResponse);
+                return;
+            }
+
+            getPrevCurrentNextListSnaps(boardSnap, listId).then(({ prev, curr, next }) => {
                 const batch = admin.firestore().batch();
 
                 if (prev !== null && next !== null) { //both exist
@@ -26,21 +67,34 @@ export const deleteListService = (boardId: string, listId: string, ownerId: stri
                 }
 
                 batch.commit().then(() => {
-                    resolve({ boardId, listId });
+                    resolve(response);
                     deleteSubcollectionsService(curr);
+                    return;
                 }).catch((err) => {
                     console.log(err);
-                    reject("List couldn't be deleted.")
+                    const rejectResponse = {
+                        status: 'internal',
+                        message: "List was not deleted. There is a problem with the database. Please try again later.",
+                    };
+                    reject(rejectResponse);
                     return;
                 });
             }).catch((err) => {
-                console.log(err);
-                reject("List doesn't exist.")
+                console.error(err);
+                const rejectResponse = {
+                    status: err.status,
+                    message: err.message,
+                };
+                reject(rejectResponse);
                 return;
             });
         }).catch((err) => {
-            console.log(err);
-            reject("Board can't be accessed.")
+            console.error(err);
+            const rejectResponse = {
+                status: err.status,
+                message: err.message,
+            };
+            reject(rejectResponse);
             return;
         });
     });

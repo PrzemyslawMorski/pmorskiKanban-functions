@@ -1,25 +1,45 @@
 import * as admin from "firebase-admin";
 import { IBoardMiniature } from "../dtos/IBoardMiniature";
+import { isOwner, isMember } from "./dbUtils";
 
 export const getBoardMiniaturesService = (userId: string): Promise<IBoardMiniature[]> => {
     return new Promise((resolve, reject) => {
+        if (userId === "" || userId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "User's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
+
         const boardsCollection = admin.firestore().collection("boards");
         boardsCollection
-            .where("ownerId", "==", userId)
             .get()
             .then((querySnapshot) => {
                 const boardMiniatures = [];
                 querySnapshot.forEach((doc) => {
-                    const docData = doc.data();
-                    const boardMiniature: IBoardMiniature = {
-                        id: doc.id,
-                        name: docData.name,
-                        ownerId: docData.ownerId,
-                    };
+                    const isOwnedBoard = isOwner(doc, userId);
 
-                    boardMiniatures.push(boardMiniature);
+                    if (isOwnedBoard || isMember(doc, userId)) {
+                        const boardMiniature: IBoardMiniature = {
+                            id: doc.id,
+                            name: doc.data().name,
+                            owner: isOwnedBoard,
+                        };
+
+                        boardMiniatures.push(boardMiniature);
+                    }
                 })
                 resolve(boardMiniatures);
+                return;
+            }).catch(err => {
+                console.error(err);
+                const rejectResponse = {
+                    status: 'internal',
+                    message: "Board miniatures were not fetched. There is a problem with the database. Please try again later.",
+                };
+                reject(rejectResponse);
                 return;
             });
     });

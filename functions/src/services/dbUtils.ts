@@ -1,10 +1,24 @@
 import { DocumentSnapshot } from "firebase-functions/lib/providers/firestore";
 import * as admin from "firebase-admin";
+import { HttpsError } from "firebase-functions/lib/providers/https";
+
+export const isOwner = (boardSnap: DocumentSnapshot, userId: string): boolean => {
+    return boardSnap.data().ownerId === userId;
+};
+
+export const isMember = (boardSnap: DocumentSnapshot, userId: string): boolean => {
+    return boardSnap.data().members.indexOf(userId) !== -1;
+}
 
 export const getTaskSnap = (listSnap: DocumentSnapshot, taskId: string): Promise<DocumentSnapshot> => {
+
     return new Promise((resolve, reject) => {
-        if (taskId === "") {
-            reject("No task id supplied");
+        if (taskId === "" || taskId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "Task's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
             return;
         }
 
@@ -13,11 +27,20 @@ export const getTaskSnap = (listSnap: DocumentSnapshot, taskId: string): Promise
             if (taskDocSnap.exists) {
                 resolve(taskDocSnap);
             } else {
-                reject("Task " + taskId + " doesn't exist.");
+                const rejectResponse = {
+                    status: 'not-found',
+                    message: "Task with supplied id doesn't exist.",
+                };
+                reject(rejectResponse);
+                return;
             }
         }).catch(err => {
-            console.log("getTaskSnap: " + err);
-            reject("Task " + taskId + " doesn't exist.");
+            console.error("getTaskSnap: " + err);
+            const rejectResponse = {
+                status: 'internal',
+                message: "There is a problem with the database. Please try again later.",
+            };
+            reject(rejectResponse);
             return;
         });
     });
@@ -25,8 +48,12 @@ export const getTaskSnap = (listSnap: DocumentSnapshot, taskId: string): Promise
 
 export const getListSnap = (boardSnap: DocumentSnapshot, listId: string): Promise<DocumentSnapshot> => {
     return new Promise((resolve, reject) => {
-        if (listId === "") {
-            reject("No list id supplied");
+        if (listId === "" || listId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "List's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
             return;
         }
 
@@ -35,45 +62,65 @@ export const getListSnap = (boardSnap: DocumentSnapshot, listId: string): Promis
             if (listDocSnap.exists) {
                 resolve(listDocSnap);
             } else {
-                reject("List " + listId + " doesn't exist.");
+                const rejectResponse = {
+                    status: 'not-found',
+                    message: "List with supplied id doesn't exist.",
+                };
+                reject(rejectResponse);
+                return;
             }
         }).catch(err => {
-            console.log("getListSnap" + err);
-            reject("List " + listId + " doesn't exist.");
+            console.error("getListSnap: " + err);
+            const rejectResponse = {
+                status: 'internal',
+                message: "There is a problem with the database. Please try again later.",
+            };
+            reject(rejectResponse);
             return;
         });
     });
 };
 
-export const getBoardSnap = (boardId: string, ownerId: string): Promise<DocumentSnapshot> => {
+export const getBoardSnap = (boardId: string, userId: string): Promise<DocumentSnapshot> => {
     return new Promise((resolve, reject) => {
-        if (boardId === "") {
-            reject("No board id supplied");
+        if (boardId === "" || boardId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
             return;
         }
 
-        if (ownerId === "") {
-            reject("No owner id supplied");
+        if (userId === "" || userId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "User's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
             return;
         }
 
         const boardDoc = admin.firestore().collection("boards").doc(boardId);
         boardDoc.get().then((boardDocSnap) => {
             if (boardDocSnap.exists) {
-                if (boardDocSnap.data().ownerId === ownerId) {
-                    resolve(boardDocSnap);
-                    return;
-                } else {
-                    reject("No access to board " + boardId + ".");
-                    return;
-                }
+                resolve(boardDocSnap);
+                return;
             } else {
-                reject("Board " + boardId + " doesn't exist.");
+                const errorResponse = {
+                    status: "not-found",
+                    message: "Board with supplied id doesn't exist.",
+                };
+                reject(errorResponse);
                 return;
             }
-        }).catch((err) => {
-            console.log("getBoardSnap" + err);
-            reject("Board " + boardId + " doesn't exist.");
+        }).catch(err => {
+            console.error("getBoardSnap: " + err);
+            const rejectResponse = {
+                status: err.status,
+                message: err.message,
+            };
+            reject(rejectResponse);
             return;
         });
     });
@@ -103,19 +150,23 @@ export const getPrevCurrentNextListSnaps = (boardSnap: DocumentSnapshot, listId:
                     resolve({ prev: null, curr, next });
                     return;
                 }).catch((nextErr) => {
-                    console.log("nextListId: " + nextId);
-                    console.log("nextListError: " + nextErr);
+                    console.error("nextListId: " + nextId);
+                    console.error("nextListError: " + nextErr);
                     resolve({ prev: null, curr, next: null });
                     return;
                 })
                 return;
             })
-        }).catch((currErr) => {
-            console.log("currentListId: " + listId);
-            console.log("currentListError: " + currErr);
-            reject("Error getting list from database");
+        }).catch(err => {
+            console.error("nextListId: " + listId);
+            console.error("nextListError: " + err);
+            const rejectResponse = {
+                status: err.status,
+                message: err.message,
+            };
+            reject(rejectResponse);
             return;
-        })
+        });
     });
 };
 
@@ -150,10 +201,14 @@ export const getPrevCurrentNextTaskSnaps = (listSnap: DocumentSnapshot, taskId: 
                 })
                 return;
             })
-        }).catch((currErr) => {
+        }).catch((err) => {
             console.log("currentTaskId: " + taskId);
-            console.log("currentTaskIdError: " + currErr);
-            reject("Error getting task from database");
+            console.log("currentTaskIdError: " + err);
+            const rejectResponse = {
+                status: err.status,
+                message: err.message,
+            };
+            reject(rejectResponse);
             return;
         })
     });

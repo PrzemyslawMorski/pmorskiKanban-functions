@@ -1,7 +1,8 @@
-import { getBoardSnap, getListSnap, isOwner } from "./dbUtils";
+import { getBoardSnap, isOwner } from "./dbUtils";
+import { IRenameBoardResponse } from "../dtos/responses";
+import { user } from "firebase-functions/lib/providers/auth";
 
-export const renameListService = (boardId: string, listId: string, listName: string, userId: string)
-    : Promise<{ boardId: string, listId: string, listName: string }> => {
+export const renameBoardService = (boardId, boardName, userId): Promise<IRenameBoardResponse> => {
     return new Promise((resolve, reject) => {
         if (boardId === "" || boardId === undefined) {
             const rejectResponse = {
@@ -12,19 +13,10 @@ export const renameListService = (boardId: string, listId: string, listName: str
             return;
         }
 
-        if (listId === "" || listId === undefined) {
+        if (boardName === "" || boardName === undefined) {
             const rejectResponse = {
                 status: 'invalid-argument',
-                message: "List's id was empty or wasn't supplied.",
-            };
-            reject(rejectResponse);
-            return;
-        }
-
-        if (listName === "" || listName === undefined) {
-            const rejectResponse = {
-                status: 'invalid-argument',
-                message: "List's name was empty or wasn't supplied.",
+                message: "Board's name was empty or wasn't supplied.",
             };
             reject(rejectResponse);
             return;
@@ -39,34 +31,29 @@ export const renameListService = (boardId: string, listId: string, listName: str
             return;
         }
 
+        const response: IRenameBoardResponse = {
+            boardId: boardId,
+            newBoardName: boardName,
+        }
+
         getBoardSnap(boardId, userId).then((boardSnap) => {
             if (!isOwner(boardSnap, userId)) {
                 const rejectResponse = {
                     status: 'permission-denied',
-                    message: "You don't have access to this list.",
+                    message: "You don't have access to this board.",
                 };
                 reject(rejectResponse);
                 return;
             }
 
-            getListSnap(boardSnap, listId).then((listSnap) => {
-                listSnap.ref.update({ name: listName }).then(() => {
-                    resolve({ boardId, listId, listName });
-                    return;
-                }).catch((err) => {
-                    console.log(err);
-                    const rejectResponse = {
-                        status: 'internal',
-                        message: "List was not renamed.There is a problem with the database.Please try again later.",
-                    };
-                    reject(rejectResponse);
-                    return;
-                });
-            }).catch((err) => {
+            boardSnap.ref.update({ name: boardName }).then(() => {
+                resolve(response);
+                return;
+            }).catch(err => {
                 console.error(err);
                 const rejectResponse = {
-                    status: err.status,
-                    message: err.message,
+                    status: 'internal',
+                    message: "Board was not renamed. There is a problem with the database. Please try again later.",
                 };
                 reject(rejectResponse);
                 return;
@@ -80,5 +67,6 @@ export const renameListService = (boardId: string, listId: string, listName: str
             reject(rejectResponse);
             return;
         });
+
     });
-};
+}

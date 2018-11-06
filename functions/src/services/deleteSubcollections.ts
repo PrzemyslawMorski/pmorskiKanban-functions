@@ -13,19 +13,19 @@ export const deleteSubcollectionsService = (snap: FirebaseFirestore.DocumentSnap
                                     deleteSubcollectionsService(docSnap);
                                 })
                                 .catch((err) => {
-                                    console.log(err);
-                                    console.log('err while deleting docSnap ' + docSnap.id);
+                                    console.error(err);
+                                    console.error('err while deleting docSnap ' + docSnap.id);
                                 });
                         }))
                     })
                     .catch((err) => {
-                        console.log(err);
-                        console.log('err while getting docsnaps from collection ' + collection.id);
+                        console.error(err);
+                        console.error('err while getting docsnaps from collection ' + collection.id);
                     })
             })
         })
         .catch((err) => {
-            console.log(err);
-            console.log('err while getting collections from docsnap ' + snap.id);
+            console.error(err);
+            console.error('err while getting collections from docsnap ' + snap.id);
         })
 };

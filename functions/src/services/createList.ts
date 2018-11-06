@@ -1,122 +1,141 @@
 import * as admin from "firebase-admin";
 import { IList } from "../dtos/IList";
+import { getBoardSnap, isOwner } from "./dbUtils";
+import { ICreateListResponse } from "../dtos/responses";
 
-export const createListService = (boardId: string, listName: string, ownerId: string)
-    : Promise<{ boardId: string, list: IList }> => {
+export const createListService = (boardId: string, listName: string, userId: string)
+    : Promise<ICreateListResponse> => {
     return new Promise((resolve, reject) => {
-        admin.firestore().collection("boards").doc(boardId).get()
-            .then((board) => {
-                if (!board.exists) {
-                    reject("Board doesn't exist.");
-                    return;
-                }
+        if (boardId === "" || boardId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
 
-                if (board.data().ownerId !== ownerId) {
-                    reject("Board can't be accessed.");
-                    return;
-                }
+        if (listName === "" || listName === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "List's name was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
 
-                const listsCollection = board.ref.collection("lists");
+        if (userId === "" || userId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "User's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
 
-                listsCollection
-                    .where("nextListId", "==", "").get()
-                    .then((querySnap: FirebaseFirestore.QuerySnapshot) => {
-                        if (querySnap.empty) {
-                            const newList: FirebaseFirestore.DocumentData = {
-                                name: listName,
-                                boardId: boardId,
-                                prevListId: "",
-                                nextListId: "",
-                            };
+        const response: ICreateListResponse = {
+            boardId: boardId,
+            newList: null,
+        };
 
-                            listsCollection.add(newList)
-                                .then((newListRef: FirebaseFirestore.DocumentReference) => {
-                                    newListRef.get()
-                                        .then((newListDoc: FirebaseFirestore.DocumentSnapshot) => {
-                                            const newListData = newListDoc.data();
-                                            const newIList: IList = {
-                                                id: newListRef.id,
-                                                boardId: newListData.boardId,
-                                                name: newListData.name,
-                                                nextListId: newListData.nextListId,
-                                                prevListId: newListData.prevListId,
-                                                tasks: [],
-                                            };
-
-                                            resolve({ boardId: boardId, list: newIList });
-                                            return;
-                                        }).catch((err) => {
-                                            reject("There was an error while creating your list. Please contact our support staff.");
-                                            console.log(err);
-                                            return;
-                                        });
-                                })
-                                .catch((err) => {
-                                    reject("There was an error while creating your list. Please contact our support staff.");
-                                    console.log(err);
-                                    return;
-                                });
-                        } else if (querySnap.size > 1) {
-                            throw new Error("More than one list with nextListId == '' in board " + boardId);
-                        } else {
-                            const lastList = querySnap.docs[0];
-                            const newList: FirebaseFirestore.DocumentData = {
-                                name: listName,
-                                boardId: boardId,
-                                prevListId: lastList.id,
-                                nextListId: "",
-                            };
-
-                            const newListRef = listsCollection.doc();
-
-                            const updateToLastList = {
-                                nextListId: newListRef.id,
-                            };
-
-                            const batch = admin.firestore().batch();
-
-                            batch.set(newListRef, newList);
-                            batch.update(lastList.ref, updateToLastList);
-
-                            batch.commit()
-                                .then(() => {
-                                    newListRef.get()
-                                        .then((newListDoc: FirebaseFirestore.DocumentSnapshot) => {
-                                            const newListData: FirebaseFirestore.DocumentData = newListDoc.data();
-                                            const newIList: IList = {
-                                                id: newListRef.id,
-                                                boardId: newListData.boardId,
-                                                name: newListData.name,
-                                                nextListId: newListData.nextListId,
-                                                prevListId: newListData.prevListId,
-                                                tasks: [],
-                                            };
-
-                                            resolve({ boardId: boardId, list: newIList });
-                                            return;
-                                        })
-                                        .catch((err) => {
-                                            reject("There was an error while creating your list. Please contact our support staff.");
-                                            console.log(err);
-                                            return;
-                                        });
-                                })
-                                .catch((err) => {
-                                    reject("There was an error while creating your list. Please contact our support staff.");
-                                    console.log(err);
-                                    return;
-                                });
-                        }
-                    })
-                    .catch(err => {
-                        reject("There was an error while creating your list. Please contact our support staff.");
-                        console.log(err);
-                        return;
-                    });
-            }).catch((err) => {
-                reject("There was an error while getting your board. Please contact our support staff.");
-                console.log(err);
+        getBoardSnap(boardId, userId).then((boardSnap: FirebaseFirestore.DocumentSnapshot) => {
+            if (!isOwner(boardSnap, userId)) {
+                const rejectResponse = {
+                    status: 'permission-denied',
+                    message: "You can't create lists in a board you do not own.",
+                };
+                reject(rejectResponse);
                 return;
-            });
+            }
+
+            const listsCollection = boardSnap.ref.collection("lists");
+
+            listsCollection
+                .where("nextListId", "==", "").get().then((querySnap: FirebaseFirestore.QuerySnapshot) => {
+                    if (querySnap.empty) {
+                        const newListRef = listsCollection.doc();
+                        const Data = {
+                            name: listName,
+                            boardId: boardId,
+                            prevListId: "",
+                            nextListId: "",
+                        };
+
+                        newListRef.set(Data).then(() => {
+                            const newList: IList = { ...Data, id: newListRef.id, tasks: [] };
+                            response.newList = newList;
+                            resolve(response);
+                            return;
+                        }).catch((err) => {
+                            console.error(err);
+                            const rejectResponse = {
+                                status: 'internal',
+                                message: "List was not created. There is a problem with the database. Please try again later.",
+                            };
+                            reject(rejectResponse);
+                            return;
+                        });
+                    } else if (querySnap.size > 1) {
+                        console.error("More than one list with nextListId == '' in board " + boardId);
+                        const rejectResponse = {
+                            status: 'internal',
+                            message: "List was not created. There is a problem with the database. Please try again later.",
+                        };
+                        reject(rejectResponse);
+                        return;
+                    } else {
+                        const lastList = querySnap.docs[0];
+                        const newListData = {
+                            name: listName,
+                            boardId: boardId,
+                            prevListId: lastList.id,
+                            nextListId: "",
+                        };
+
+                        const newListRef = listsCollection.doc();
+
+                        const updateToLastList = {
+                            nextListId: newListRef.id,
+                        };
+
+                        const batch = admin.firestore().batch();
+
+                        batch.set(newListRef, newListData);
+                        batch.update(lastList.ref, updateToLastList);
+
+                        batch.commit().then(() => {
+                            const newIList: IList = { ...newListData, id: newListRef.id, tasks: [] };
+                            response.boardId = boardId;
+                            response.newList = newIList;
+                            resolve(response);
+                            return;
+                        }).catch((err) => {
+                            console.error(err);
+                            const rejectResponse = {
+                                status: 'internal',
+                                message: "List was not created. There is a problem with the database. Please try again later.",
+                            };
+                            reject(rejectResponse);
+                            return;
+                        });
+                    }
+                }).catch(err => {
+                    console.error(err);
+                    const rejectResponse = {
+                        status: 'internal',
+                        message: "List was not created. There is a problem with the database. Please try again later.",
+                    };
+                    reject(rejectResponse);
+                    return;
+                });
+        }).catch((err) => {
+            console.error(err);
+            const rejectResponse = {
+                status: err.status,
+                message: err.message,
+            };
+            reject(rejectResponse);
+            return;
+        });
     });
 }

@@ -1,21 +1,64 @@
-import { getBoardSnap, getListSnap } from "./dbUtils";
+import { getBoardSnap, getListSnap, isOwner } from "./dbUtils";
 import { ITask } from "../dtos/ITask";
 import * as admin from "firebase-admin";
 
-export const createTaskService = (boardId: string, listId: string, taskName: string, ownerId: string) => {
+export const createTaskService = (boardId: string, listId: string, taskName: string, userId: string) => {
     return new Promise((resolve, reject) => {
-        getBoardSnap(boardId, ownerId).then((boardSnap) => {
-            getListSnap(boardSnap, listId).then((listSnap) => {
-                if (taskName === "") {
-                    reject("No task name supplied");
-                    return;
-                }
+        if (boardId === "" || boardId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
 
+        if (listId === "" || listId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "List's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
+
+        if (taskName === "" || taskName === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "Task's name was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
+
+        if (userId === "" || userId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "User's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
+
+        getBoardSnap(boardId, userId).then((boardSnap) => {
+            if (!isOwner(boardSnap, userId)) {
+                const rejectResponse = {
+                    status: 'permission-denied',
+                    message: "You can't create tasks in a board you do not own.",
+                };
+                reject(rejectResponse);
+                return;
+            }
+
+            getListSnap(boardSnap, listId).then((listSnap) => {
                 listSnap.ref.collection("tasks").where("nextTaskId", "==", "").get().then((lastTaskQuerySnap) => {
-                    console.log('got tasks collection')
                     if (lastTaskQuerySnap.size > 1) {
-                        reject("Error creating task. Please contact our support staff.");
                         console.error("More than one task with nextTaskId == '' in board " + boardId + " list " + listId);
+                        const rejectResponse = {
+                            status: 'internal',
+                            message: "Task was not created. There is a problem with the database. Please try again later.",
+                        };
+                        reject(rejectResponse);
                         return;
                     }
 
@@ -36,10 +79,14 @@ export const createTaskService = (boardId: string, listId: string, taskName: str
                             }
                             resolve({ boardId: boardId, listId: listId, task: createdTask });
                         }).catch((err) => {
-                            reject("Error creating task. Please contact our support staff.");
                             console.error(err);
+                            const rejectResponse = {
+                                status: 'internal',
+                                message: "Task was not created. There is a problem with the database. Please try again later.",
+                            };
+                            reject(rejectResponse);
                             return;
-                        });;
+                        });
                     } else {
                         const lastTask = lastTaskQuerySnap.docs[0].ref;
                         const newTaskData = {
@@ -61,24 +108,40 @@ export const createTaskService = (boardId: string, listId: string, taskName: str
                             resolve({ boardId: boardId, listId: listId, task: createdTask });
                             return;
                         }).catch((err) => {
-                            reject("Error creating task. Please contact our support staff.");
                             console.error(err);
+                            const rejectResponse = {
+                                status: 'internal',
+                                message: "Task was not created. There is a problem with the database. Please try again later.",
+                            };
+                            reject(rejectResponse);
                             return;
                         });
                     }
                 }).catch((err) => {
-                    reject("Error creating task. Please contact our support staff.");
                     console.error(err);
+                    const rejectResponse = {
+                        status: 'internal',
+                        message: "Task was not created. There is a problem with the database. Please try again later.",
+                    };
+                    reject(rejectResponse);
                     return;
                 });
             }).catch((err) => {
-                reject(err);
-                console.log(err);
+                console.error(err);
+                const rejectResponse = {
+                    status: err.status,
+                    message: err.message,
+                };
+                reject(rejectResponse);
                 return;
             });
         }).catch((err) => {
-            reject(err);
-            console.log(err);
+            console.error(err);
+            const rejectResponse = {
+                status: err.status,
+                message: err.message,
+            };
+            reject(rejectResponse);
             return;
         });
     });

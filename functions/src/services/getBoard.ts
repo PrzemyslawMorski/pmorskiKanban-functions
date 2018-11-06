@@ -1,137 +1,117 @@
-import * as admin from "firebase-admin";
 import { IBoard } from "../dtos/IBoard";
 import { ITask } from "../dtos/ITask";
 import { IList } from "../dtos/IList";
+import { IGetBoardResponse } from "../dtos/responses";
+import { getBoardSnap, isOwner, isMember } from "./dbUtils";
 
-export const getBoardService = (boardId: string, userId: string) => {
+export const getBoardService = (boardId: string, userId: string): Promise<IGetBoardResponse> => {
     return new Promise((resolve, reject) => {
-        if (boardId === "" || userId === "") {
-            reject("Board id or user id is empty.");
+        if (boardId === "" || boardId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
             return;
         }
 
-        const boardDocRef = admin.firestore()
-            .collection("boards")
-            .doc(boardId);
+        if (userId === "" || userId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "User's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
 
-        boardDocRef.get()
-            .then((boardDoc) => {
-                if (boardDoc.exists) {
-                    const boardData = boardDoc.data();
-                    if (boardData.ownerId !== userId) {
-                        reject("Board can't be accessed.");
-                        return;
-                    }
+        getBoardSnap(boardId, userId).then((boardSnap) => {
+            if (!isMember(boardSnap, userId) && !isOwner(boardSnap, userId)) {
+                const rejectResponse = {
+                    status: 'permission-denied',
+                    message: "You don't have access to this board.",
+                };
+                reject(rejectResponse);
+                return;
+            }
 
-                    boardDocRef.getCollections().then((boardCollections) => {
-                        const listsCollection = boardCollections.find(collection => collection.id === "lists");
+            const listsCollection = boardSnap.ref.collection("lists");
 
-                        if (listsCollection !== undefined) {
-                            listsCollection.get()
-                                .then(listsDocs => {
-                                    const getListsCollectionsPromises = [];
-                                    const lists: Array<IList> = [];
+            listsCollection.get().then(listsQuerySnap => {
+                const getListsTasksCollections: Promise<FirebaseFirestore.QuerySnapshot>[] = [];
+                const lists: Array<IList> = [];
 
-                                    listsDocs.forEach((listSnapshot) => {
-                                        const getListCollectionsPromise = listSnapshot.ref.getCollections();
-                                        const listData = listSnapshot.data();
+                listsQuerySnap.forEach((listSnapshot) => {
+                    getListsTasksCollections.push(listSnapshot.ref.collection("tasks").get())
 
-                                        const list: IList = {
-                                            id: listSnapshot.id,
-                                            name: listData.name,
-                                            boardId: boardDoc.id,
-                                            nextListId: listData.nextListId,
-                                            prevListId: listData.prevListId,
-                                            tasks: []
-                                        }
+                    const listData = listSnapshot.data();
+                    const list: IList = {
+                        id: listSnapshot.id,
+                        name: listData.name,
+                        boardId: boardSnap.id,
+                        nextListId: listData.nextListId,
+                        prevListId: listData.prevListId,
+                        tasks: []
+                    };
 
-                                        getListsCollectionsPromises.push(getListCollectionsPromise);
-                                        lists.push(list);
-                                    });
+                    lists.push(list);
+                });
 
-                                    Promise.all(getListsCollectionsPromises)
-                                        .then((listsCollections) => {
-                                            const getListsTasksPromises = [];
+                Promise.all(getListsTasksCollections).then((taskCollectionSnaps) => {
+                    taskCollectionSnaps.forEach((taskCollection) => {
+                        taskCollection.forEach((taskSnap) => {
+                            const taskData = taskSnap.data();
 
-                                            listsCollections.forEach((listCollections) => {
-                                                const tasksCollection = listCollections.find(collection => collection.id === "tasks");
+                            const task: ITask = {
+                                id: taskSnap.id,
+                                name: taskData.name,
+                                description: taskData.description,
+                                listId: taskData.listId,
+                                nextTaskId: taskData.nextTaskId,
+                                prevTaskId: taskData.prevTaskId
+                            };
 
-                                                if (tasksCollection !== undefined) {
-                                                    const getTasksPromise = tasksCollection.get();
-                                                    getListsTasksPromises.push(getTasksPromise);
-                                                }
-                                            });
+                            const list = lists.find((someList) => someList.id === task.listId);
 
-                                            Promise.all(getListsTasksPromises)
-                                                .then((listsTasksSnaps) => {
-                                                    listsTasksSnaps.forEach((listTasksSnap) => {
-                                                        listTasksSnap.forEach((listTaskSnap) => {
-                                                            const taskData = listTaskSnap.data();
-
-                                                            const task: ITask = {
-                                                                id: listTaskSnap.id,
-                                                                name: taskData.name,
-                                                                description: taskData.description,
-                                                                listId: taskData.listId,
-                                                                nextTaskId: taskData.nextTaskId,
-                                                                prevTaskId: taskData.prevTaskId
-                                                            };
-
-                                                            const list = lists.find((someList) => someList.id === task.listId);
-                                                            list.tasks.push(task);
-                                                        })
-
-                                                    });
-
-                                                    const board: IBoard = {
-                                                        id: boardDoc.id,
-                                                        name: boardData.name,
-                                                        ownerId: boardData.ownerId,
-                                                        lists: lists
-                                                    }
-                                                    resolve(board);
-                                                })
-                                                .catch((error) => {
-                                                    console.log(error);
-                                                    const board: IBoard = {
-                                                        id: boardDoc.id,
-                                                        name: boardData.name,
-                                                        ownerId: boardData.ownerId,
-                                                        lists: []
-                                                    }
-                                                    resolve(board);
-                                                });
-                                        })
-                                        .catch((error) => {
-                                            console.log(error);
-                                            const board: IBoard = {
-                                                id: boardDoc.id,
-                                                name: boardData.name,
-                                                ownerId: boardData.ownerId,
-                                                lists: []
-                                            }
-                                            resolve(board);
-                                        });
-                                });
-                        } else {
-                            const board: IBoard = {
-                                id: boardDoc.id,
-                                name: boardData.name,
-                                ownerId: boardData.ownerId,
-                                lists: []
+                            if (list !== undefined) {
+                                list.tasks.push(task);
                             }
-                            resolve(board);
-                        }
+                        });
                     });
-                } else {
-                    reject("Board doesn't exist.")
+
+                    const board: IBoard = {
+                        id: boardSnap.id,
+                        name: boardSnap.data().name,
+                        owner: isOwner(boardSnap, userId),
+                        lists: lists
+                    };
+
+                    resolve({ board });
+                }).catch((err) => {
+                    console.error(err);
+                    const rejectResponse = {
+                        status: 'internal',
+                        message: "Board was not fetched. There is a problem with the database. Please try again later.",
+                    };
+                    reject(rejectResponse);
                     return;
-                }
-            })
-            .catch((error) => {
-                console.log("Error getting board: ", error);
-                reject(error)
+                });
+            }).catch((err) => {
+                console.error(err);
+                const rejectResponse = {
+                    status: 'internal',
+                    message: "Board was not fetched. There is a problem with the database. Please try again later.",
+                };
+                reject(rejectResponse);
                 return;
             });
+        }).catch((err) => {
+            console.error(err);
+            const rejectResponse = {
+                status: err.status,
+                message: err.message,
+            };
+            reject(rejectResponse);
+            return;
+        });
     });
 }

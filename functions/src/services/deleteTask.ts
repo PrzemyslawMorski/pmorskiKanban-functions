@@ -1,18 +1,57 @@
-import { getBoardSnap, getListSnap, getPrevCurrentNextTaskSnaps } from "./dbUtils";
+import { getBoardSnap, getListSnap, getPrevCurrentNextTaskSnaps, isOwner } from "./dbUtils";
 import * as admin from "firebase-admin";
 import { deleteSubcollectionsService } from "./deleteSubcollections";
 
-export const deleteTaskService = (boardId: string, listId: string, taskId: string, ownerId: string) => {
+export const deleteTaskService = (boardId: string, listId: string, taskId: string, userId: string) => {
     return new Promise((resolve, reject) => {
-        getBoardSnap(boardId, ownerId).then((boardSnap) => {
-            getListSnap(boardSnap, listId).then((listSnap) => {
-                if (taskId === "") {
-                    reject("No task id supplied");
-                    return;
-                }
+        if (boardId === "" || boardId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
 
+        if (listId === "" || listId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "List's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
+
+        if (taskId === "" || taskId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "Task's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
+
+        if (userId === "" || userId === undefined) {
+            const rejectResponse = {
+                status: 'invalid-argument',
+                message: "User's id was empty or wasn't supplied.",
+            };
+            reject(rejectResponse);
+            return;
+        }
+
+        getBoardSnap(boardId, userId).then((boardSnap) => {
+            if (!isOwner(boardSnap, userId)) {
+                const rejectResponse = {
+                    status: 'permission-denied',
+                    message: "You can't delete tasks in a board you do not own.",
+                };
+                reject(rejectResponse);
+                return;
+            }
+
+            getListSnap(boardSnap, listId).then((listSnap) => {
                 getPrevCurrentNextTaskSnaps(listSnap, taskId).then(({ prev, curr, next }) => {
-                    console.log('got prev curr next snaps of list ' + listId);
 
                     const batch = admin.firestore().batch();
 
@@ -35,23 +74,38 @@ export const deleteTaskService = (boardId: string, listId: string, taskId: strin
                         deleteSubcollectionsService(curr);
                     }).catch((err) => {
                         console.log(err);
-                        reject("Task couldn't be deleted.")
+                        const rejectResponse = {
+                            status: 'internal',
+                            message: "Task was not deleted. There is a problem with the database. Please try again later.",
+                        };
+                        reject(rejectResponse);
                         return;
                     });
                 }).catch((err) => {
-                    console.log(err);
-                    reject("Task doesn't exist.")
+                    console.error(err);
+                    const rejectResponse = {
+                        status: err.status,
+                        message: err.message,
+                    };
+                    reject(rejectResponse);
                     return;
                 });
-
             }).catch((err) => {
-                reject("Error deleting task. Please contact our support staff.");
                 console.error(err);
+                const rejectResponse = {
+                    status: err.status,
+                    message: err.message,
+                };
+                reject(rejectResponse);
                 return;
             });
         }).catch((err) => {
-            reject(err);
-            console.log(err);
+            console.error(err);
+            const rejectResponse = {
+                status: err.status,
+                message: err.message,
+            };
+            reject(rejectResponse);
             return;
         });
     });
