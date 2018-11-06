@@ -1,6 +1,5 @@
 import { DocumentSnapshot } from "firebase-functions/lib/providers/firestore";
 import * as admin from "firebase-admin";
-import { HttpsError } from "firebase-functions/lib/providers/https";
 
 export const isOwner = (boardSnap: DocumentSnapshot, userId: string): boolean => {
     return boardSnap.data().ownerId === userId;

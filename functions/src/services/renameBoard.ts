@@ -1,6 +1,5 @@
 import { getBoardSnap, isOwner } from "./dbUtils";
 import { IRenameBoardResponse } from "../dtos/responses";
-import { user } from "firebase-functions/lib/providers/auth";
 
 export const renameBoardService = (boardId, boardName, userId): Promise<IRenameBoardResponse> => {
     return new Promise((resolve, reject) => {

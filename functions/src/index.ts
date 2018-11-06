@@ -5,7 +5,7 @@ import { getBoardMiniaturesService } from "./services/getBoardMiniatures";
 import { getBoardService } from "./services/getBoard";
 import { renameBoardService } from "./services/renameBoard";
 import { createBoardService } from "./services/createBoard";
-import { CallableContext, HttpsError } from "firebase-functions/lib/providers/https";
+import { CallableContext } from "firebase-functions/lib/providers/https";
 import { deleteBoardService } from "./services/deleteBoard";
 import { createListService } from "./services/createList";
 import { deleteListService } from "./services/deleteList";
@@ -25,7 +25,7 @@ const settings = {/* your settings... */ timestampsInSnapshots: true };
 firestore.settings(settings);
 
 
-export const getBoardMiniatures = functions.https.onCall((context: CallableContext) => {
+export const getBoardMiniatures = functions.https.onCall((data: any, context: CallableContext) => {
   return getBoardMiniaturesService(context.auth.uid).then(response => {
     return response;
   }).catch((err) => {
