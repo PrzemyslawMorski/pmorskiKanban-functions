@@ -1,7 +1,8 @@
 import { getBoardSnap, getListSnap, isOwner } from "./dbUtils";
+import { IRenameListResponse } from "../dtos/responses";
 
 export const renameListService = (boardId: string, listId: string, listName: string, userId: string)
-    : Promise<{ boardId: string, listId: string, listName: string }> => {
+    : Promise<IRenameListResponse> => {
     return new Promise((resolve, reject) => {
         if (boardId === "" || boardId === undefined) {
             const rejectResponse = {
@@ -51,7 +52,13 @@ export const renameListService = (boardId: string, listId: string, listName: str
 
             getListSnap(boardSnap, listId).then((listSnap) => {
                 listSnap.ref.update({ name: listName }).then(() => {
-                    resolve({ boardId, listId, listName });
+                    const response: IRenameListResponse = {
+                        boardId: boardId,
+                        listId: listId,
+                        newListName: listName,
+                    };
+
+                    resolve(response);
                     return;
                 }).catch((err) => {
                     console.log(err);

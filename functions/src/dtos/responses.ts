@@ -3,7 +3,7 @@ import { IBoard } from "./IBoard";
 import { IList } from "./IList";
 import { ITask } from "./ITask";
 
-export interface IGetBoardMiniaturesResponseResponse {
+export interface IGetBoardMiniaturesResponse {
     boardMiniatures: IBoardMiniature[] | null;
 }
 

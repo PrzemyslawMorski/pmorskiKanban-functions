@@ -1,8 +1,9 @@
 import * as admin from "firebase-admin";
 import { IBoardMiniature } from "../dtos/IBoardMiniature";
 import { isOwner, isMember } from "./dbUtils";
+import { IGetBoardMiniaturesResponse } from "../dtos/responses";
 
-export const getBoardMiniaturesService = (userId: string): Promise<IBoardMiniature[]> => {
+export const getBoardMiniaturesService = (userId: string): Promise<IGetBoardMiniaturesResponse> => {
     return new Promise((resolve, reject) => {
         if (userId === "" || userId === undefined) {
             const rejectResponse = {
@@ -31,7 +32,12 @@ export const getBoardMiniaturesService = (userId: string): Promise<IBoardMiniatu
                         boardMiniatures.push(boardMiniature);
                     }
                 })
-                resolve(boardMiniatures);
+
+                const response: IGetBoardMiniaturesResponse = {
+                    boardMiniatures: boardMiniatures,
+                }
+
+                resolve(response);
                 return;
             }).catch(err => {
                 console.error(err);

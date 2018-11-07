@@ -1,8 +1,9 @@
 import { getBoardSnap, getListSnap, getPrevCurrentNextTaskSnaps, isOwner } from "./dbUtils";
 import * as admin from "firebase-admin";
 import { deleteSubcollectionsService } from "./deleteSubcollections";
+import { IDeleteTaskResponse } from "../dtos/responses";
 
-export const deleteTaskService = (boardId: string, listId: string, taskId: string, userId: string) => {
+export const deleteTaskService = (boardId: string, listId: string, taskId: string, userId: string): Promise<IDeleteTaskResponse> => {
     return new Promise((resolve, reject) => {
         if (boardId === "" || boardId === undefined) {
             const rejectResponse = {
@@ -70,7 +71,13 @@ export const deleteTaskService = (boardId: string, listId: string, taskId: strin
                     }
 
                     batch.commit().then(() => {
-                        resolve({ boardId, listId, taskId });
+                        const response: IDeleteTaskResponse = {
+                            boardId: boardId,
+                            listId: listId,
+                            taskId: taskId,
+                        };
+
+                        resolve(response);
                         deleteSubcollectionsService(curr);
                     }).catch((err) => {
                         console.log(err);

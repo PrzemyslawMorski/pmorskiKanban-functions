@@ -1,8 +1,9 @@
 import { getBoardSnap, getListSnap, isOwner } from "./dbUtils";
 import { ITask } from "../dtos/ITask";
 import * as admin from "firebase-admin";
+import { ICreateTaskResponse } from "../dtos/responses";
 
-export const createTaskService = (boardId: string, listId: string, taskName: string, userId: string) => {
+export const createTaskService = (boardId: string, listId: string, taskName: string, userId: string): Promise<ICreateTaskResponse> => {
     return new Promise((resolve, reject) => {
         if (boardId === "" || boardId === undefined) {
             const rejectResponse = {
@@ -77,7 +78,14 @@ export const createTaskService = (boardId: string, listId: string, taskName: str
                             const createdTask: ITask = {
                                 ...newTaskData, id: newTaskRef.id
                             }
-                            resolve({ boardId: boardId, listId: listId, task: createdTask });
+
+                            const response: ICreateTaskResponse = {
+                                boardId: boardId,
+                                listId: listId,
+                                task: createdTask,
+                            }
+
+                            resolve(response);
                         }).catch((err) => {
                             console.error(err);
                             const rejectResponse = {
@@ -105,8 +113,14 @@ export const createTaskService = (boardId: string, listId: string, taskName: str
                             const createdTask: ITask = {
                                 ...newTaskData, id: newTaskRef.id
                             }
-                            resolve({ boardId: boardId, listId: listId, task: createdTask });
-                            return;
+
+                            const response: ICreateTaskResponse = {
+                                boardId: boardId,
+                                listId: listId,
+                                task: createdTask,
+                            }
+
+                            resolve(response);
                         }).catch((err) => {
                             console.error(err);
                             const rejectResponse = {
