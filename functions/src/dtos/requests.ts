@@ -47,3 +47,18 @@ export interface IDeleteTaskRequest {
     taskId: string;
 }
 
+export interface IRenameTaskRequest {
+    boardId: string;
+    listId: string;
+    newTaskName: string;
+    taskId: string;
+}
+
+export interface IChangeTaskDescriptionRequest {
+    boardId: string;
+    listId: string;
+    newTaskDescription: string;
+    taskId: string;
+}
+
+

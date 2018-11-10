@@ -13,10 +13,12 @@ import { renameListService } from "./services/renameList";
 import { createTaskService } from "./services/createTask";
 import { deleteTaskService } from "./services/deleteTask";
 import {
-  IGetBoardRequest, IGetGravatarUrlRequest, IRenameBoardRequest,
-  ICreateBoardRequest, IDeleteBoardRequest, ICreateListRequest, IDeleteListRequest, IRenameListRequest,
-  ICreateTaskRequest, IDeleteTaskRequest
+    IGetBoardRequest, IGetGravatarUrlRequest, IRenameBoardRequest,
+    ICreateBoardRequest, IDeleteBoardRequest, ICreateListRequest, IDeleteListRequest, IRenameListRequest,
+    ICreateTaskRequest, IDeleteTaskRequest, IChangeTaskDescriptionRequest, IRenameTaskRequest
 } from "./dtos/requests";
+import {renameTaskService} from "./services/renameTask";
+import {changeTaskDescriptionService} from "./services/changeTaskDescription";
 
 admin.initializeApp();
 
@@ -29,9 +31,9 @@ export const getBoardMiniatures = functions.https.onCall((data: any, context: Ca
   return getBoardMiniaturesService(context.auth.uid).then(response => {
     return response;
   }).catch((err) => {
-    console.log('catch in index.ts')
-    console.log('errstatus: ' + err.status);
-    console.log('errmessage: ' + err.message);
+    console.log('catch in index.ts');
+    console.log('error status: ' + err.status);
+    console.log('error message: ' + err.message);
     throw new functions.https.HttpsError(err.status, err.message);
   });
 });
@@ -40,9 +42,9 @@ export const getBoardMiniatures = functions.https.onCall((data: any, context: Ca
 //   return getBoardMiniaturesService(data.userId).then(response => {
 //     return response;
 //   }).catch((err) => {
-//     console.log('catch in index.ts')
-//     console.log('errstatus: ' + err.status);
-//     console.log('errmessage: ' + err.message);
+//     console.log('catch in index.ts');
+//     console.log('error status: ' + err.status);
+//     console.log('error message: ' + err.message);
 //     throw new functions.https.HttpsError(err.status, err.message);
 //   });
 // });
@@ -51,9 +53,9 @@ export const getBoard = functions.https.onCall((data: IGetBoardRequest, context:
   return getBoardService(data.boardId, context.auth.uid).then(response => {
     return response;
   }).catch((err) => {
-    console.log('catch in index.ts')
-    console.log('errstatus: ' + err.status);
-    console.log('errmessage: ' + err.message);
+    console.log('catch in index.ts');
+    console.log('error status: ' + err.status);
+    console.log('error message: ' + err.message);
     throw new functions.https.HttpsError(err.status, err.message);
   });
 });
@@ -62,9 +64,9 @@ export const getBoard = functions.https.onCall((data: IGetBoardRequest, context:
 //   return getBoardService(data.boardId, data.userId).then(response => {
 //     return response;
 //   }).catch((err) => {
-//     console.log('catch in index.ts')
-//     console.log('errstatus: ' + err.status);
-//     console.log('errmessage: ' + err.message);
+//     console.log('catch in index.ts');
+//     console.log('error status: ' + err.status);
+//     console.log('error message: ' + err.message);
 //     throw new functions.https.HttpsError(err.status, err.message);
 //   });
 // });
@@ -77,9 +79,9 @@ export const renameBoard = functions.https.onCall((data: IRenameBoardRequest, co
   return renameBoardService(data.boardId, data.boardName, context.auth.uid).then(response => {
     return response;
   }).catch((err) => {
-    console.log('catch in index.ts')
-    console.log('errstatus: ' + err.status);
-    console.log('errmessage: ' + err.message);
+    console.log('catch in index.ts');
+    console.log('error status: ' + err.status);
+    console.log('error message: ' + err.message);
     throw new functions.https.HttpsError(err.status, err.message);
   });
 });
@@ -88,9 +90,9 @@ export const renameBoard = functions.https.onCall((data: IRenameBoardRequest, co
 //   return renameBoardService(data.boardId, data.boardName, data.userId).then(response => {
 //     return response;
 //   }).catch((err) => {
-//     console.log('catch in index.ts')
-//     console.log('errstatus: ' + err.status);
-//     console.log('errmessage: ' + err.message);
+//     console.log('catch in index.ts');
+//     console.log('error status: ' + err.status);
+//     console.log('error message: ' + err.message);
 //     throw new functions.https.HttpsError(err.status, err.message);
 //   });
 // });
@@ -99,9 +101,9 @@ export const createBoard = functions.https.onCall((data: ICreateBoardRequest, co
   return createBoardService(data.boardName, context.auth.uid).then(response => {
     return response;
   }).catch((err) => {
-    console.log('catch in index.ts')
-    console.log('errstatus: ' + err.status);
-    console.log('errmessage: ' + err.message);
+    console.log('catch in index.ts');
+    console.log('error status: ' + err.status);
+    console.log('error message: ' + err.message);
     throw new functions.https.HttpsError(err.status, err.message);
   });
 });
@@ -110,9 +112,9 @@ export const createBoard = functions.https.onCall((data: ICreateBoardRequest, co
 //   return createBoardService(data.boardName, data.userId).then(response => {
 //     return response;
 //   }).catch((err) => {
-//     console.log('catch in index.ts')
-//     console.log('errstatus: ' + err.status);
-//     console.log('errmessage: ' + err.message);
+//     console.log('catch in index.ts');
+//     console.log('error status: ' + err.status);
+//     console.log('error message: ' + err.message);
 //     throw new functions.https.HttpsError(err.status, err.message);
 //   });
 // });
@@ -121,9 +123,9 @@ export const deleteBoard = functions.https.onCall((data: IDeleteBoardRequest, co
   return deleteBoardService(data.boardId, context.auth.uid).then(response => {
     return response;
   }).catch((err) => {
-    console.log('catch in index.ts')
-    console.log('errstatus: ' + err.status);
-    console.log('errmessage: ' + err.message);
+    console.log('catch in index.ts');
+    console.log('error status: ' + err.status);
+    console.log('error message: ' + err.message);
     throw new functions.https.HttpsError(err.status, err.message);
   });
 });
@@ -132,9 +134,9 @@ export const deleteBoard = functions.https.onCall((data: IDeleteBoardRequest, co
 //   return deleteBoardService(data.boardId, data.userId).then(response => {
 //     return response;
 //   }).catch((err) => {
-//     console.log('catch in index.ts')
-//     console.log('errstatus: ' + err.status);
-//     console.log('errmessage: ' + err.message);
+//     console.log('catch in index.ts');
+//     console.log('error status: ' + err.status);
+//     console.log('error message: ' + err.message);
 //     throw new functions.https.HttpsError(err.status, err.message);
 //   });
 // });
@@ -143,9 +145,9 @@ export const createList = functions.https.onCall((data: ICreateListRequest, cont
   return createListService(data.boardId, data.listName, context.auth.uid).then(response => {
     return response;
   }).catch((err) => {
-    console.log('catch in index.ts')
-    console.log('errstatus: ' + err.status);
-    console.log('errmessage: ' + err.message);
+    console.log('catch in index.ts');
+    console.log('error status: ' + err.status);
+    console.log('error message: ' + err.message);
     throw new functions.https.HttpsError(err.status, err.message);
   });
 });
@@ -154,9 +156,9 @@ export const createList = functions.https.onCall((data: ICreateListRequest, cont
 //   return createListService(data.boardId, data.listName, data.userId).then(response => {
 //     return response;
 //   }).catch((err) => {
-//     console.log('catch in index.ts')
-//     console.log('errstatus: ' + err.status);
-//     console.log('errmessage: ' + err.message);
+//     console.log('catch in index.ts');
+//     console.log('error status: ' + err.status);
+//     console.log('error message: ' + err.message);
 //     throw new functions.https.HttpsError(err.status, err.message);
 //   });
 // });
@@ -165,9 +167,9 @@ export const deleteList = functions.https.onCall((data: IDeleteListRequest, cont
   return deleteListService(data.boardId, data.listId, context.auth.uid).then(response => {
     return response;
   }).catch((err) => {
-    console.log('catch in index.ts')
-    console.log('errstatus: ' + err.status);
-    console.log('errmessage: ' + err.message);
+    console.log('catch in index.ts');
+    console.log('error status: ' + err.status);
+    console.log('error message: ' + err.message);
     throw new functions.https.HttpsError(err.status, err.message);
   });
 });
@@ -176,9 +178,9 @@ export const deleteList = functions.https.onCall((data: IDeleteListRequest, cont
 //   return deleteListService(data.boardId, data.listId, data.userId).then(response => {
 //     return response;
 //   }).catch((err) => {
-//     console.log('catch in index.ts')
-//     console.log('errstatus: ' + err.status);
-//     console.log('errmessage: ' + err.message);
+//     console.log('catch in index.ts');
+//     console.log('error status: ' + err.status);
+//     console.log('error message: ' + err.message);
 //     throw new functions.https.HttpsError(err.status, err.message);
 //   });
 // });
@@ -187,9 +189,9 @@ export const renameList = functions.https.onCall((data: IRenameListRequest, cont
   return renameListService(data.boardId, data.listId, data.listName, context.auth.uid).then(response => {
     return response;
   }).catch((err) => {
-    console.log('catch in index.ts')
-    console.log('errstatus: ' + err.status);
-    console.log('errmessage: ' + err.message);
+    console.log('catch in index.ts');
+    console.log('error status: ' + err.status);
+    console.log('error message: ' + err.message);
     throw new functions.https.HttpsError(err.status, err.message);
   });
 });
@@ -198,9 +200,9 @@ export const renameList = functions.https.onCall((data: IRenameListRequest, cont
 //   return renameListService(data.boardId, data.listId, data.listName, data.userId).then(response => {
 //     return response;
 //   }).catch((err) => {
-//     console.log('catch in index.ts')
-//     console.log('errstatus: ' + err.status);
-//     console.log('errmessage: ' + err.message);
+//     console.log('catch in index.ts');
+//     console.log('error status: ' + err.status);
+//     console.log('error message: ' + err.message);
 //     throw new functions.https.HttpsError(err.status, err.message);
 //   });
 // });
@@ -209,9 +211,9 @@ export const createTask = functions.https.onCall((data: ICreateTaskRequest, cont
   return createTaskService(data.boardId, data.listId, data.taskName, context.auth.uid).then(response => {
     return response;
   }).catch((err) => {
-    console.log('catch in index.ts')
-    console.log('errstatus: ' + err.status);
-    console.log('errmessage: ' + err.message);
+    console.log('catch in index.ts');
+    console.log('error status: ' + err.status);
+    console.log('error message: ' + err.message);
     throw new functions.https.HttpsError(err.status, err.message);
   });
 });
@@ -220,9 +222,9 @@ export const createTask = functions.https.onCall((data: ICreateTaskRequest, cont
 //   return createTaskService(data.boardId, data.listId, data.taskName, data.userId).then(response => {
 //     return response;
 //   }).catch((err) => {
-//     console.log('catch in index.ts')
-//     console.log('errstatus: ' + err.status);
-//     console.log('errmessage: ' + err.message);
+//     console.log('catch in index.ts');
+//     console.log('error status: ' + err.status);
+//     console.log('error message: ' + err.message);
 //     throw new functions.https.HttpsError(err.status, err.message);
 //   });
 // });
@@ -231,9 +233,9 @@ export const deleteTask = functions.https.onCall((data: IDeleteTaskRequest, cont
   return deleteTaskService(data.boardId, data.listId, data.taskId, context.auth.uid).then(response => {
     return response;
   }).catch((err) => {
-    console.log('catch in index.ts')
-    console.log('errstatus: ' + err.status);
-    console.log('errmessage: ' + err.message);
+    console.log('catch in index.ts');
+    console.log('error status: ' + err.status);
+    console.log('error message: ' + err.message);
     throw new functions.https.HttpsError(err.status, err.message);
   });
 });
@@ -242,9 +244,53 @@ export const deleteTask = functions.https.onCall((data: IDeleteTaskRequest, cont
 //   return deleteTaskService(data.boardId, data.listId, data.taskId, data.userId).then(response => {
 //     return response;
 //   }).catch((err) => {
-//     console.log('catch in index.ts')
-//     console.log('errstatus: ' + err.status);
-//     console.log('errmessage: ' + err.message);
+//     console.log('catch in index.ts');
+//     console.log('error status: ' + err.status);
+//     console.log('error message: ' + err.message);
 //     throw new functions.https.HttpsError(err.status, err.message);
 //   });
+// });
+
+export const renameTask = functions.https.onCall((data: IRenameTaskRequest, context: CallableContext) => {
+    return renameTaskService(data.boardId, data.listId, data.taskId, data.newTaskName, context.auth.uid).then(response => {
+        return response;
+    }).catch((err) => {
+        console.log('catch in index.ts');
+        console.log('error status: ' + err.status);
+        console.log('error message: ' + err.message);
+        throw new functions.https.HttpsError(err.status, err.message);
+    });
+});
+
+// export const renameTaskTest = functions.https.onCall((data: IRenameTaskRequest & { userId: string }) => {
+//     return renameTaskService(data.boardId, data.listId, data.taskId, data.newTaskName, data.userId).then(response => {
+//         return response;
+//     }).catch((err) => {
+//         console.log('catch in index.ts');
+//         console.log('error status: ' + err.status);
+//         console.log('error message: ' + err.message);
+//         throw new functions.https.HttpsError(err.status, err.message);
+//     });
+// });
+
+export const changeTaskDescription = functions.https.onCall((data: IChangeTaskDescriptionRequest, context: CallableContext) => {
+    return changeTaskDescriptionService(data.boardId, data.listId, data.taskId, data.newTaskDescription, context.auth.uid).then(response => {
+        return response;
+    }).catch((err) => {
+        console.log('catch in index.ts');
+        console.log('error status: ' + err.status);
+        console.log('error message: ' + err.message);
+        throw new functions.https.HttpsError(err.status, err.message);
+    });
+});
+
+// export const changeTaskDescriptionTest = functions.https.onCall((data: IChangeTaskDescriptionRequest & { userId: string }) => {
+//     return changeTaskDescriptionService(data.boardId, data.listId, data.taskId, data.newTaskDescription, data.userId).then(response => {
+//         return response;
+//     }).catch((err) => {
+//         console.log('catch in index.ts');
+//         console.log('error status: ' + err.status);
+//         console.log('error message: ' + err.message);
+//         throw new functions.https.HttpsError(err.status, err.message);
+//     });
 // });
