@@ -111,7 +111,6 @@ export const moveListService = (request: IMoveListRequest, userId: string)
                     const targetPrev = firstSecond.first;
                     const targetNext = firstSecond.second;
 
-
                     const targetPrevId = targetPrev !== null ? targetPrev.id : "";
                     const targetNextId = targetNext !== null ? targetNext.id : "";
 
@@ -160,7 +159,7 @@ export const moveListService = (request: IMoveListRequest, userId: string)
                         };
                         reject(rejectResponse);
                         return;
-                    })
+                    });
                 }).catch((err) => {
                     console.error(err);
                     const rejectResponse = {

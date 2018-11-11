@@ -241,3 +241,33 @@ export const getPrevCurrentNextTaskSnaps = (listSnap: DocumentSnapshot, taskId: 
         })
     });
 };
+
+
+export const getTwoTaskSnaps = (listSnap: DocumentSnapshot, firstTaskId: string, secondTaskId: string)
+    : Promise<{ first: DocumentSnapshot, second: DocumentSnapshot }> => {
+    return new Promise((resolve) => {
+        getTaskSnap(listSnap, firstTaskId).then((first) => {
+            getTaskSnap(listSnap, secondTaskId).then((second) => {
+                resolve({first, second});
+                return;
+            }).catch((secondErr) => {
+                console.log("taskId: " + secondTaskId);
+                console.log("taskIdError: " + secondErr);
+                resolve({first, second: null});
+                return;
+            })
+        }).catch((firstErr) => {
+            getTaskSnap(listSnap, secondTaskId).then((second) => {
+                resolve({first: null, second});
+                return;
+            }).catch((secondErr) => {
+                console.log("taskId: " + secondTaskId);
+                console.log("taskIdError: " + secondErr);
+                resolve({first: null, second: null});
+                return;
+            });
+            console.error("taskId: " + firstTaskId);
+            console.error("taskIdError: " + firstErr);
+        });
+    });
+};

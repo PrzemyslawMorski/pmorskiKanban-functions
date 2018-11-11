@@ -73,12 +73,12 @@ export interface IMoveListRequest {
 export interface IMoveTaskRequest {
     boardId: string;
     listId: string;
-    taskId: string;
-    srcPrevTaskId: string;
     srcNextTaskId: string;
+    srcPrevTaskId: string;
     targetListId: string;
-    targetPrevTaskId: string;
     targetNextTaskId: string;
+    targetPrevTaskId: string;
+    taskId: string;
 }
 
 
