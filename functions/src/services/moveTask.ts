@@ -195,6 +195,14 @@ export const moveTaskService = (request: IMoveTaskRequest, userId: string): Prom
                             reject(rejectResponse);
                             return;
                         });
+                    }).catch((err) => {
+                        console.error(err);
+                        const rejectResponse = {
+                            status: err.status,
+                            message: err.message,
+                        };
+                        reject(rejectResponse);
+                        return;
                     });
                 }).catch((err) => {
                     console.error(err);
@@ -312,6 +320,14 @@ export const moveTaskService = (request: IMoveTaskRequest, userId: string): Prom
                             reject(rejectResponse);
                             return;
                         });
+                    }).catch((err) => {
+                        console.error(err);
+                        const rejectResponse = {
+                            status: err.status,
+                            message: err.message,
+                        };
+                        reject(rejectResponse);
+                        return;
                     });
                 }).catch((err) => {
                     console.error(err);
