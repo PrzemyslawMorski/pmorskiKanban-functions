@@ -251,57 +251,68 @@ export const moveTaskService = (request: IMoveTaskRequest, userId: string): Prom
                             const targetPrevId = targetPrev !== null ? targetPrev.id : "";
                             const targetNextId = targetNext !== null ? targetNext.id : "";
 
-                            if ((targetPrev === null && targetNext === null) || (targetPrev !== null && targetPrev.data().nextTaskId !== targetNextId) ||
-                                (targetNext !== null && targetNext.data().prevTaskId !== targetPrevId)) {
-                                const rejectResponse = {
-                                    status: 'invalid-argument',
-                                    message: "The database is out of sync with your view. Please refresh the page to update your view of the board.",
+                            targetListSnap.ref.collection("tasks").get().then((colSnap) => {
+                                if ((!colSnap.empty && targetListSnap && targetPrev === null && targetNext === null) ||
+                                    (targetPrev !== null && targetPrev.data().nextTaskId !== targetNextId) ||
+                                    (targetNext !== null && targetNext.data().prevTaskId !== targetPrevId)) {
+                                    const rejectResponse = {
+                                        status: 'invalid-argument',
+                                        message: "The database is out of sync with your view. Please refresh the page to update your view of the board.",
+                                    };
+                                    reject(rejectResponse);
+                                    return;
+                                }
+
+                                const batch = admin.firestore().batch();
+
+                                if (oldPrevTask !== null) {
+                                    batch.update(oldPrevTask.ref, {nextTaskId: oldNextId});
+                                }
+
+                                if (oldNextTask !== null) {
+                                    batch.update(oldNextTask.ref, {prevTaskId: oldPrevId});
+                                }
+
+                                if (targetPrev !== null) {
+                                    batch.update(targetPrev.ref, {nextTaskId: request.taskId});
+                                }
+
+                                if (targetNext !== null) {
+                                    batch.update(targetNext.ref, {prevTaskId: request.taskId});
+                                }
+
+                                const movedTaskData = movedTask.data();
+                                const newMovedTaskData = {
+                                    name: movedTaskData.name,
+                                    description: movedTaskData.description,
+                                    listId: request.targetListId,
+                                    prevTaskId: targetPrevId,
+                                    nextTaskId: targetNextId
                                 };
-                                reject(rejectResponse);
-                                return;
-                            }
 
-                            const batch = admin.firestore().batch();
+                                const taskDocMovedToTargetList = targetListSnap.ref.collection("tasks").doc(request.taskId);
+                                batch.set(taskDocMovedToTargetList, newMovedTaskData);
 
-                            if (oldPrevTask !== null) {
-                                batch.update(oldPrevTask.ref, {nextTaskId: oldNextId});
-                            }
+                                batch.delete(movedTask.ref);
 
-                            if (oldNextTask !== null) {
-                                batch.update(oldNextTask.ref, {prevTaskId: oldPrevId});
-                            }
-
-                            if (targetPrev !== null) {
-                                batch.update(targetPrev.ref, {nextTaskId: request.taskId});
-                            }
-
-                            if (targetNext !== null) {
-                                batch.update(targetNext.ref, {prevTaskId: request.taskId});
-                            }
-
-                            const movedTaskData = movedTask.data();
-                            const newMovedTaskData = {
-                                name: movedTaskData.name,
-                                description: movedTaskData.description,
-                                listId: request.targetListId,
-                                prevTaskId: targetPrevId,
-                                nextTaskId: targetNextId
-                            };
-
-                            const taskDocMovedToTargetList = targetListSnap.ref.collection("tasks").doc(request.taskId);
-                            batch.set(taskDocMovedToTargetList, newMovedTaskData);
-
-                            batch.delete(movedTask.ref);
-
-                            batch.commit().then(() => {
-                                const response: IMoveTaskResponse = {
-                                    boardId: request.boardId,
-                                    listId: request.listId,
-                                    targetListId: request.targetListId,
-                                    taskId: request.taskId,
-                                };
-                                resolve(response);
-                                return;
+                                batch.commit().then(() => {
+                                    const response: IMoveTaskResponse = {
+                                        boardId: request.boardId,
+                                        listId: request.listId,
+                                        targetListId: request.targetListId,
+                                        taskId: request.taskId,
+                                    };
+                                    resolve(response);
+                                    return;
+                                }).catch((err) => {
+                                    console.error(err);
+                                    const rejectResponse = {
+                                        status: "internal",
+                                        message: "Task was not moved. There was an error with the database. Please try again later.",
+                                    };
+                                    reject(rejectResponse);
+                                    return;
+                                });
                             }).catch((err) => {
                                 console.error(err);
                                 const rejectResponse = {
