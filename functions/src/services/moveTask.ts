@@ -1,21 +1,13 @@
 import {getBoardSnap, isOwner} from "./dbUtils";
-import {IRenameBoardResponse} from "../dtos/responses";
+import {IMoveTaskResponse} from "../dtos/responses";
+import {IMoveTaskRequest} from "../dtos/requests";
 
-export const renameBoardService = (boardId, boardName, userId): Promise<IRenameBoardResponse> => {
+export const moveTaskService = (request: IMoveTaskRequest, userId: string): Promise<IMoveTaskResponse> => {
     return new Promise((resolve, reject) => {
-        if (boardId === "" || boardId === undefined) {
+        if (request.boardId === "" || request.boardId === undefined) {
             const rejectResponse = {
                 status: 'invalid-argument',
                 message: "Board's id was empty or wasn't supplied.",
-            };
-            reject(rejectResponse);
-            return;
-        }
-
-        if (boardName === "" || boardName === undefined) {
-            const rejectResponse = {
-                status: 'invalid-argument',
-                message: "Board's name was empty or wasn't supplied.",
             };
             reject(rejectResponse);
             return;
@@ -30,12 +22,14 @@ export const renameBoardService = (boardId, boardName, userId): Promise<IRenameB
             return;
         }
 
-        const response: IRenameBoardResponse = {
-            boardId: boardId,
-            newBoardName: boardName,
-        };
+        // const response: IMoveTaskResponse = {
+        //     boardId: request.boardId,
+        //     listId: request.listId,
+        //     targetListId: request.targetListId,
+        //     taskId: request.taskId,
+        // };
 
-        getBoardSnap(boardId, userId).then((boardSnap) => {
+        getBoardSnap(request.boardId, userId).then((boardSnap) => {
             if (!isOwner(boardSnap, userId)) {
                 const rejectResponse = {
                     status: 'permission-denied',
@@ -45,18 +39,6 @@ export const renameBoardService = (boardId, boardName, userId): Promise<IRenameB
                 return;
             }
 
-            boardSnap.ref.update({ name: boardName }).then(() => {
-                resolve(response);
-                return;
-            }).catch(err => {
-                console.error(err);
-                const rejectResponse = {
-                    status: 'internal',
-                    message: "Board was not renamed. There is a problem with the database. Please try again later.",
-                };
-                reject(rejectResponse);
-                return;
-            });
         }).catch((err) => {
             console.error(err);
             const rejectResponse = {

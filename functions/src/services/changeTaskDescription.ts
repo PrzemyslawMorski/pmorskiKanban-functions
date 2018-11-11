@@ -61,6 +61,7 @@ export const changeTaskDescriptionService = (boardId: string, listId: string, ta
             }
 
             getListSnap(boardSnap, listId).then((listSnap) => {
+
                 getTaskSnap(listSnap, taskId).then((taskSnap) => {
 
                     taskSnap.ref.update({description: newTaskDescription}).then(() => {

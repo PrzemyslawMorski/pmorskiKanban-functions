@@ -1,4 +1,4 @@
-import { DocumentSnapshot } from "firebase-functions/lib/providers/firestore";
+import {DocumentSnapshot} from "firebase-functions/lib/providers/firestore";
 import * as admin from "firebase-admin";
 
 export const isOwner = (boardSnap: DocumentSnapshot, userId: string): boolean => {
@@ -7,7 +7,7 @@ export const isOwner = (boardSnap: DocumentSnapshot, userId: string): boolean =>
 
 export const isMember = (boardSnap: DocumentSnapshot, userId: string): boolean => {
     return boardSnap.data().members.indexOf(userId) !== -1;
-}
+};
 
 export const getTaskSnap = (listSnap: DocumentSnapshot, taskId: string): Promise<DocumentSnapshot> => {
 
@@ -134,26 +134,26 @@ export const getPrevCurrentNextListSnaps = (boardSnap: DocumentSnapshot, listId:
 
             getListSnap(boardSnap, prevId).then((prev) => {
                 getListSnap(boardSnap, nextId).then((next) => {
-                    resolve({ prev, curr, next });
+                    resolve({prev, curr, next});
                     return;
                 }).catch((nextErr) => {
                     console.log("nextListId: " + nextId);
                     console.log("nextListError: " + nextErr);
-                    resolve({ prev, curr, next: null });
+                    resolve({prev, curr, next: null});
                     return;
                 })
             }).catch((prevErr) => {
                 console.log("prevListId: " + prevId);
                 console.log("prevListError: " + prevErr);
                 getListSnap(boardSnap, nextId).then((next) => {
-                    resolve({ prev: null, curr, next });
+                    resolve({prev: null, curr, next});
                     return;
                 }).catch((nextErr) => {
                     console.error("nextListId: " + nextId);
                     console.error("nextListError: " + nextErr);
-                    resolve({ prev: null, curr, next: null });
+                    resolve({prev: null, curr, next: null});
                     return;
-                })
+                });
                 return;
             })
         }).catch(err => {
@@ -169,6 +169,35 @@ export const getPrevCurrentNextListSnaps = (boardSnap: DocumentSnapshot, listId:
     });
 };
 
+export const getTwoListSnaps = (boardSnap: DocumentSnapshot, firstListId: string, secondListId: string)
+    : Promise<{ first: DocumentSnapshot, second: DocumentSnapshot }> => {
+    return new Promise((resolve) => {
+        getListSnap(boardSnap, firstListId).then((first) => {
+            getListSnap(boardSnap, secondListId).then((second) => {
+                resolve({first, second});
+                return;
+            }).catch((secondErr) => {
+                console.log("listId: " + secondListId);
+                console.log("listIdError: " + secondErr);
+                resolve({first, second: null});
+                return;
+            })
+        }).catch((firstErr) => {
+            getListSnap(boardSnap, secondListId).then((second) => {
+                resolve({first: null, second});
+                return;
+            }).catch((secondErr) => {
+                console.log("listId: " + secondListId);
+                console.log("listIdError: " + secondErr);
+                resolve({first: null, second: null});
+                return;
+            });
+            console.error("listId: " + firstListId);
+            console.error("listIdError: " + firstErr);
+        });
+    });
+};
+
 export const getPrevCurrentNextTaskSnaps = (listSnap: DocumentSnapshot, taskId: string)
     : Promise<{ prev: DocumentSnapshot, curr: DocumentSnapshot, next: DocumentSnapshot }> => {
     return new Promise((resolve, reject) => {
@@ -178,26 +207,26 @@ export const getPrevCurrentNextTaskSnaps = (listSnap: DocumentSnapshot, taskId: 
 
             getTaskSnap(listSnap, prevTaskId).then((prev) => {
                 getTaskSnap(listSnap, nextTaskId).then((next) => {
-                    resolve({ prev, curr, next });
+                    resolve({prev, curr, next});
                     return;
                 }).catch((nextErr) => {
                     console.log("nextTaskId: " + nextTaskId);
                     console.log("nextTaskIdError: " + nextErr);
-                    resolve({ prev, curr, next: null });
+                    resolve({prev, curr, next: null});
                     return;
                 })
             }).catch((prevErr) => {
                 console.log("prevTaskId: " + prevTaskId);
                 console.log("prevTaskIdError: " + prevErr);
                 getTaskSnap(listSnap, nextTaskId).then((next) => {
-                    resolve({ prev: null, curr, next });
+                    resolve({prev: null, curr, next});
                     return;
                 }).catch((nextErr) => {
                     console.log("nextTaskId: " + nextTaskId);
                     console.log("nextTaskIdError: " + nextErr);
-                    resolve({ prev: null, curr, next: null });
+                    resolve({prev: null, curr, next: null});
                     return;
-                })
+                });
                 return;
             })
         }).catch((err) => {

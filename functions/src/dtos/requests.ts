@@ -61,4 +61,24 @@ export interface IChangeTaskDescriptionRequest {
     taskId: string;
 }
 
+export interface IMoveListRequest {
+    boardId: string;
+    listId: string;
+    srcPrevListId: string;
+    srcNextListId: string;
+    targetPrevListId: string;
+    targetNextListId: string;
+}
+
+export interface IMoveTaskRequest {
+    boardId: string;
+    listId: string;
+    taskId: string;
+    srcPrevTaskId: string;
+    srcNextTaskId: string;
+    targetListId: string;
+    targetPrevTaskId: string;
+    targetNextTaskId: string;
+}
+
 

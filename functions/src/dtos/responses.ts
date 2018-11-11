@@ -1,7 +1,7 @@
-import { IBoardMiniature } from "./IBoardMiniature";
-import { IBoard } from "./IBoard";
-import { IList } from "./IList";
-import { ITask } from "./ITask";
+import {IBoardMiniature} from "./IBoardMiniature";
+import {IBoard} from "./IBoard";
+import {IList} from "./IList";
+import {ITask} from "./ITask";
 
 export interface IGetBoardMiniaturesResponse {
     boardMiniatures: IBoardMiniature[] | null;
@@ -67,5 +67,17 @@ export interface IChangeTaskDescriptionResponse {
     boardId: string;
     listId: string;
     newTaskDescription: string;
+    taskId: string;
+}
+
+export interface IMoveListResponse {
+    boardId: string;
+    listId: string;
+}
+
+export interface IMoveTaskResponse {
+    boardId: string;
+    listId: string;
+    targetListId: string;
     taskId: string;
 }
