@@ -13,6 +13,7 @@ import {renameListService} from "./services/renameList";
 import {createTaskService} from "./services/createTask";
 import {deleteTaskService} from "./services/deleteTask";
 import {
+    IAddViewerRequest,
     IChangeTaskDescriptionRequest,
     ICreateBoardRequest,
     ICreateListRequest,
@@ -24,16 +25,27 @@ import {
     IGetGravatarUrlRequest,
     IMoveListRequest,
     IMoveTaskRequest,
+    IRemoveViewerRequest,
     IRenameBoardRequest,
     IRenameListRequest,
-    IRenameTaskRequest
+    IRenameTaskRequest,
+    ISearchUsersRequest,
+    IUnsubBoardRequest
 } from "./dtos/requests";
 import {renameTaskService} from "./services/renameTask";
 import {changeTaskDescriptionService} from "./services/changeTaskDescription";
 import {moveListService} from "./services/moveList";
 import {moveTaskService} from "./services/moveTask";
+import {addViewerService} from "./services/addViewer";
+import {removeViewerService} from "./services/removeViewer";
+import {unsubBoardService} from "./services/unsubBoard";
+import {searchUsersByEmailService} from "./services/searchUsersByEmail";
 
-admin.initializeApp();
+const serviceAccount = require("./pmorskikanban-firebase-adminsdk");
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: "https://pmorskikanban.firebaseio.com"
+});
 
 const firestore = admin.firestore();
 const settings = {/* your settings... */ timestampsInSnapshots: true};
@@ -341,8 +353,19 @@ export const moveTask = functions.https.onCall((data: IMoveTaskRequest, context:
     });
 });
 
-export const moveTaskTest = functions.https.onCall((data: IMoveTaskRequest & { userId: string }) => {
-    return moveTaskService(data, data.userId).then(response => {
+// export const moveTaskTest = functions.https.onCall((data: IMoveTaskRequest & { userId: string }) => {
+//     return moveTaskService(data, data.userId).then(response => {
+//         return response;
+//     }).catch((err) => {
+//         console.log('catch in index.ts');
+//         console.log('error status: ' + err.status);
+//         console.log('error message: ' + err.message);
+//         throw new functions.https.HttpsError(err.status, err.message);
+//     });
+// });
+
+export const addViewer = functions.https.onCall((data: IAddViewerRequest, context: CallableContext) => {
+    return addViewerService(data, context.auth.uid).then(response => {
         return response;
     }).catch((err) => {
         console.log('catch in index.ts');
@@ -351,3 +374,80 @@ export const moveTaskTest = functions.https.onCall((data: IMoveTaskRequest & { u
         throw new functions.https.HttpsError(err.status, err.message);
     });
 });
+
+// export const addViewerTest = functions.https.onCall((data: IAddViewerRequest & { userId: string }) => {
+//     return addViewerService(data, data.userId).then(response => {
+//         return response;
+//     }).catch((err) => {
+//         console.log('catch in index.ts');
+//         console.log('error status: ' + err.status);
+//         console.log('error message: ' + err.message);
+//         throw new functions.https.HttpsError(err.status, err.message);
+//     });
+// });
+
+export const removeViewer = functions.https.onCall((data: IRemoveViewerRequest, context: CallableContext) => {
+    return removeViewerService(data, context.auth.uid).then(response => {
+        return response;
+    }).catch((err) => {
+        console.log('catch in index.ts');
+        console.log('error status: ' + err.status);
+        console.log('error message: ' + err.message);
+        throw new functions.https.HttpsError(err.status, err.message);
+    });
+});
+
+// export const removeViewerTest = functions.https.onCall((data: IRemoveViewerRequest & { userId: string }) => {
+//     return removeViewerService(data, data.userId).then(response => {
+//         return response;
+//     }).catch((err) => {
+//         console.log('catch in index.ts');
+//         console.log('error status: ' + err.status);
+//         console.log('error message: ' + err.message);
+//         throw new functions.https.HttpsError(err.status, err.message);
+//     });
+// });
+
+export const unsubBoard = functions.https.onCall((data: IUnsubBoardRequest, context: CallableContext) => {
+    return unsubBoardService(data, context.auth.uid).then(response => {
+        return response;
+    }).catch((err) => {
+        console.log('catch in index.ts');
+        console.log('error status: ' + err.status);
+        console.log('error message: ' + err.message);
+        throw new functions.https.HttpsError(err.status, err.message);
+    });
+});
+
+// export const unsubBoardTest = functions.https.onCall((data: IUnsubBoardRequest & { userId: string }) => {
+//     return unsubBoardService(data, data.userId).then(response => {
+//         return response;
+//     }).catch((err) => {
+//         console.log('catch in index.ts');
+//         console.log('error status: ' + err.status);
+//         console.log('error message: ' + err.message);
+//         throw new functions.https.HttpsError(err.status, err.message);
+//     });
+// });
+
+export const searchUsersByEmail = functions.https.onCall((data: ISearchUsersRequest, context: CallableContext) => {
+    return searchUsersByEmailService(data, context.auth.uid).then(response => {
+        return response;
+    }).catch((err) => {
+        console.log('catch in index.ts');
+        console.log('error status: ' + err.status);
+        console.log('error message: ' + err.message);
+        throw new functions.https.HttpsError(err.status, err.message);
+    });
+});
+
+// export const searchUsersByEmailTest = functions.https.onCall((data: ISearchUsersRequest & { userId: string }) => {
+//     return searchUsersByEmailService(data, data.userId).then(response => {
+//         return response;
+//     }).catch((err) => {
+//         console.log('catch in index.ts');
+//         console.log('error status: ' + err.status);
+//         console.log('error message: ' + err.message);
+//         throw new functions.https.HttpsError(err.status, err.message);
+//     });
+// });

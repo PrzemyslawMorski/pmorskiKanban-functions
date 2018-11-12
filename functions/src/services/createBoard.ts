@@ -1,6 +1,5 @@
 import * as admin from "firebase-admin";
-import { IBoard } from "../dtos/IBoard";
-import { ICreateBoardResponse } from "../dtos/responses";
+import {ICreateBoardResponse} from "../dtos/responses";
 
 export const createBoardService = (boardName: string, userId: string): Promise<ICreateBoardResponse> => {
     return new Promise((resolve, reject) => {
@@ -30,20 +29,19 @@ export const createBoardService = (boardName: string, userId: string): Promise<I
         const boardData = {
             name: boardName,
             ownerId: userId,
-            members: [userId],
+            viewers: [],
         };
 
         const boardRef = boardsCollection.doc();
 
         boardRef.set(boardData).then(() => {
-            const board: IBoard = {
+            response.newBoard = {
                 id: boardRef.id,
                 name: boardName,
                 owner: true,
+                viewers: [],
                 lists: [],
             };
-
-            response.newBoard = board;
             resolve(response);
         }).catch((error) => {
             console.error("Error setting board data in board " + boardRef.id);
@@ -62,4 +60,4 @@ export const createBoardService = (boardName: string, userId: string): Promise<I
             return;
         });
     });
-}
+};

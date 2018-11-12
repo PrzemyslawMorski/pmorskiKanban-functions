@@ -1,12 +1,14 @@
 import {DocumentSnapshot} from "firebase-functions/lib/providers/firestore";
 import * as admin from "firebase-admin";
+import {IUser} from "../dtos/IUser";
+import UserRecord = admin.auth.UserRecord;
 
 export const isOwner = (boardSnap: DocumentSnapshot, userId: string): boolean => {
     return boardSnap.data().ownerId === userId;
 };
 
-export const isMember = (boardSnap: DocumentSnapshot, userId: string): boolean => {
-    return boardSnap.data().members.indexOf(userId) !== -1;
+export const isViewer = (boardSnap: DocumentSnapshot, userId: string): boolean => {
+    return boardSnap.data().viewers.indexOf(userId) !== -1;
 };
 
 export const getTaskSnap = (listSnap: DocumentSnapshot, taskId: string): Promise<DocumentSnapshot> => {
@@ -269,5 +271,30 @@ export const getTwoTaskSnaps = (listSnap: DocumentSnapshot, firstTaskId: string,
             console.error("taskId: " + firstTaskId);
             console.error("taskIdError: " + firstErr);
         });
+    });
+};
+
+export const getViewers = (userIds: string[]): Promise<IUser[]> => {
+    return new Promise((resolve) => {
+        const getUserPromises: Promise<UserRecord>[] = [];
+
+        userIds.forEach(userId => getUserPromises.push(admin.auth().getUser(userId)));
+
+        Promise.all(getUserPromises).then((users: UserRecord[]) => {
+            const iusers = users.map((user: UserRecord) => {
+                return {
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                    email: user.email,
+                };
+            });
+            resolve(iusers);
+            return;
+        }).catch((err) => {
+            console.error(err);
+            resolve([]);
+            return;
+        })
     });
 };

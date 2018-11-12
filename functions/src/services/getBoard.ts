@@ -1,8 +1,9 @@
-import { IBoard } from "../dtos/IBoard";
-import { ITask } from "../dtos/ITask";
-import { IList } from "../dtos/IList";
-import { IGetBoardResponse } from "../dtos/responses";
-import { getBoardSnap, isOwner, isMember } from "./dbUtils";
+import {IBoard} from "../dtos/IBoard";
+import {ITask} from "../dtos/ITask";
+import {IList} from "../dtos/IList";
+import {IGetBoardResponse} from "../dtos/responses";
+import {getBoardSnap, getViewers, isOwner, isViewer} from "./dbUtils";
+import {IUser} from "../dtos/IUser";
 
 export const getBoardService = (boardId: string, userId: string): Promise<IGetBoardResponse> => {
     return new Promise((resolve, reject) => {
@@ -25,7 +26,7 @@ export const getBoardService = (boardId: string, userId: string): Promise<IGetBo
         }
 
         getBoardSnap(boardId, userId).then((boardSnap) => {
-            if (!isMember(boardSnap, userId) && !isOwner(boardSnap, userId)) {
+            if (!isViewer(boardSnap, userId) && !isOwner(boardSnap, userId)) {
                 const rejectResponse = {
                     status: 'permission-denied',
                     message: "You don't have access to this board.",
@@ -41,7 +42,7 @@ export const getBoardService = (boardId: string, userId: string): Promise<IGetBo
                 const lists: Array<IList> = [];
 
                 listsQuerySnap.forEach((listSnapshot) => {
-                    getListsTasksCollections.push(listSnapshot.ref.collection("tasks").get())
+                    getListsTasksCollections.push(listSnapshot.ref.collection("tasks").get());
 
                     const listData = listSnapshot.data();
                     const list: IList = {
@@ -78,14 +79,27 @@ export const getBoardService = (boardId: string, userId: string): Promise<IGetBo
                         });
                     });
 
-                    const board: IBoard = {
-                        id: boardSnap.id,
-                        name: boardSnap.data().name,
-                        owner: isOwner(boardSnap, userId),
-                        lists: lists
-                    };
+                    getViewers(boardSnap.data().viewers).then((viewers: IUser[]) => {
+                        console.log('got viewers');
 
-                    resolve({ board });
+                        const board: IBoard = {
+                            id: boardSnap.id,
+                            name: boardSnap.data().name,
+                            owner: isOwner(boardSnap, userId),
+                            lists,
+                            viewers,
+                        };
+
+                        resolve({board});
+                    }).catch(err => {
+                        console.error(err);
+                        const rejectResponse = {
+                            status: 'internal',
+                            message: "Board was not fetched. There is a problem with the database. Please try again later.",
+                        };
+                        reject(rejectResponse);
+                        return;
+                    });
                 }).catch((err) => {
                     console.error(err);
                     const rejectResponse = {
@@ -114,4 +128,4 @@ export const getBoardService = (boardId: string, userId: string): Promise<IGetBo
             return;
         });
     });
-}
+};

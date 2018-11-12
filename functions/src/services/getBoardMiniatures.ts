@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
-import { IBoardMiniature } from "../dtos/IBoardMiniature";
-import { isOwner, isMember } from "./dbUtils";
-import { IGetBoardMiniaturesResponse } from "../dtos/responses";
+import {IBoardMiniature} from "../dtos/IBoardMiniature";
+import {isOwner, isViewer} from "./dbUtils";
+import {IGetBoardMiniaturesResponse} from "../dtos/responses";
 
 export const getBoardMiniaturesService = (userId: string): Promise<IGetBoardMiniaturesResponse> => {
     return new Promise((resolve, reject) => {
@@ -22,7 +22,7 @@ export const getBoardMiniaturesService = (userId: string): Promise<IGetBoardMini
                 querySnapshot.forEach((doc) => {
                     const isOwnedBoard = isOwner(doc, userId);
 
-                    if (isOwnedBoard || isMember(doc, userId)) {
+                    if (isOwnedBoard || isViewer(doc, userId)) {
                         const boardMiniature: IBoardMiniature = {
                             id: doc.id,
                             name: doc.data().name,
@@ -31,11 +31,11 @@ export const getBoardMiniaturesService = (userId: string): Promise<IGetBoardMini
 
                         boardMiniatures.push(boardMiniature);
                     }
-                })
+                });
 
                 const response: IGetBoardMiniaturesResponse = {
                     boardMiniatures: boardMiniatures,
-                }
+                };
 
                 resolve(response);
                 return;
@@ -49,4 +49,4 @@ export const getBoardMiniaturesService = (userId: string): Promise<IGetBoardMini
                 return;
             });
     });
-}
+};

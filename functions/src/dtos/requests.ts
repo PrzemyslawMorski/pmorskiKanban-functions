@@ -81,4 +81,21 @@ export interface IMoveTaskRequest {
     taskId: string;
 }
 
+export interface ISearchUsersRequest {
+    boardId: string;
+    phrase: string;
+}
 
+export interface IAddViewerRequest {
+    boardId: string;
+    userId: string;
+}
+
+export interface IRemoveViewerRequest {
+    boardId: string;
+    userId: string;
+}
+
+export interface IUnsubBoardRequest {
+    boardId: string;
+}

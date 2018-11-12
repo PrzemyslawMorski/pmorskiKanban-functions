@@ -2,6 +2,7 @@ import {IBoardMiniature} from "./IBoardMiniature";
 import {IBoard} from "./IBoard";
 import {IList} from "./IList";
 import {ITask} from "./ITask";
+import {IUser} from "./IUser";
 
 export interface IGetBoardMiniaturesResponse {
     boardMiniatures: IBoardMiniature[] | null;
@@ -80,4 +81,24 @@ export interface IMoveTaskResponse {
     listId: string;
     targetListId: string;
     taskId: string;
+}
+
+export interface ISearchUsersResponse {
+    boardId: string;
+    users: IUser[];
+}
+
+export interface IAddViewerResponse {
+    boardId: string;
+    userId: string;
+}
+
+export interface IRemoveViewerResponse {
+    boardId: string;
+    userId: string;
+}
+
+export interface IUnsubBoardResponse {
+    boardId: string;
+    userId: string;
 }
