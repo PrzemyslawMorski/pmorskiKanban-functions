@@ -1,7 +1,8 @@
 import * as admin from "firebase-admin";
-import { deleteSubcollectionsService } from "./deleteSubcollections";
-import { getBoardSnap, isOwner } from "./dbUtils";
-import { IDeleteBoardResponse } from "../dtos/responses";
+import {deleteSubcollectionsService} from "./deleteSubcollections";
+import {getBoardSnap, isOwner} from "./dbUtils";
+import {IDeleteBoardResponse} from "../dtos/responses";
+import {deleteAttachmentsForBoard} from "./deleteAttachments";
 
 export const deleteBoardService = (boardId: string, userId: string): Promise<IDeleteBoardResponse> => {
     return new Promise((resolve, reject) => {
@@ -25,7 +26,7 @@ export const deleteBoardService = (boardId: string, userId: string): Promise<IDe
 
         const response: IDeleteBoardResponse = {
             boardId: boardId,
-        }
+        };
 
         const boardsCollection = admin.firestore().collection("boards");
         const boardDoc = boardsCollection.doc(boardId);
@@ -41,6 +42,7 @@ export const deleteBoardService = (boardId: string, userId: string): Promise<IDe
             }
 
             boardDoc.delete().then(() => {
+                deleteAttachmentsForBoard(boardId);
                 deleteSubcollectionsService(boardSnap);
                 resolve(response);
                 return;
@@ -63,4 +65,4 @@ export const deleteBoardService = (boardId: string, userId: string): Promise<IDe
             return;
         });
     });
-}
+};

@@ -99,3 +99,12 @@ export interface IRemoveViewerRequest {
 export interface IUnsubBoardRequest {
     boardId: string;
 }
+
+export interface IAddAttachmentRequest {
+    boardId: string;
+    listId: string;
+    taskId: string;
+    attachmentName: string;
+    attachmentContent: any;
+    attachmentType: string;
+}

@@ -40,17 +40,18 @@ import {addViewerService} from "./services/addViewer";
 import {removeViewerService} from "./services/removeViewer";
 import {unsubBoardService} from "./services/unsubBoard";
 import {searchUsersByEmailService} from "./services/searchUsersByEmail";
+import {onAttachmentDeletedService} from "./services/onAttachmentDeleted";
 
 const serviceAccount = require("./pmorskikanban-firebase-adminsdk");
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://pmorskikanban.firebaseio.com"
+    databaseURL: "https://pmorskikanban.firebaseio.com",
+    storageBucket: "pmorskikanban.appspot.com",
 });
 
 const firestore = admin.firestore();
 const settings = {/* your settings... */ timestampsInSnapshots: true};
 firestore.settings(settings);
-
 
 export const getBoardMiniatures = functions.https.onCall((data: any, context: CallableContext) => {
     return getBoardMiniaturesService(context.auth.uid).then(response => {
@@ -443,6 +444,21 @@ export const searchUsersByEmail = functions.https.onCall((data: ISearchUsersRequ
 
 // export const searchUsersByEmailTest = functions.https.onCall((data: ISearchUsersRequest & { userId: string }) => {
 //     return searchUsersByEmailService(data, data.userId).then(response => {
+//         return response;
+//     }).catch((err) => {
+//         console.log('catch in index.ts');
+//         console.log('error status: ' + err.status);
+//         console.log('error message: ' + err.message);
+//         throw new functions.https.HttpsError(err.status, err.message);
+//     });
+// });
+
+export const onTaskAttachmentDelete = functions.firestore.document("attachments/{attachmentId}").onDelete((snap) => {
+    onAttachmentDeletedService(snap);
+});
+
+// export const addAttachment = functions.https.onCall((data: IAddAttachmentRequest, context: CallableContext) => {
+//     return addAttachmentService(data, context.auth.uid).then(response => {
 //         return response;
 //     }).catch((err) => {
 //         console.log('catch in index.ts');

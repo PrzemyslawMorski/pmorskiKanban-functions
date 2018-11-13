@@ -102,3 +102,17 @@ export interface IUnsubBoardResponse {
     boardId: string;
     userId: string;
 }
+
+export interface IAddAttachmentResponse {
+    boardId: string;
+    listId: string;
+    taskId: string;
+    attachmentId: string;
+}
+
+export interface IRemoveAttachmentResponse {
+    boardId: string;
+    listId: string;
+    taskId: string;
+    attachmentId: string;
+}

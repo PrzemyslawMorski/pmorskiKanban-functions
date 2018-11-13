@@ -1,6 +1,7 @@
 import {DocumentSnapshot} from "firebase-functions/lib/providers/firestore";
 import * as admin from "firebase-admin";
 import {IUser} from "../dtos/IUser";
+import {IAttachment} from "../dtos/IAttachment";
 import UserRecord = admin.auth.UserRecord;
 
 export const isOwner = (boardSnap: DocumentSnapshot, userId: string): boolean => {
@@ -296,5 +297,136 @@ export const getViewers = (userIds: string[]): Promise<IUser[]> => {
             resolve([]);
             return;
         })
+    });
+};
+
+export const getAttachments = (boardId: string): Promise<IAttachment[]> => {
+    return new Promise((resolve, reject) => {
+        if (boardId === "" || boardId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        admin.firestore().collection("attachments").get().then((querySnap) => {
+            resolve(querySnap.docs.filter(doc => doc.data().boardId === boardId).map((attachmentDoc) => {
+                const attachmentData = attachmentDoc.data();
+                const attachmentId = attachmentDoc.id;
+                return {
+                    id: attachmentId,
+                    boardId: boardId,
+                    listId: attachmentData.listId,
+                    taskId: attachmentData.taskId,
+                    name: attachmentData.name,
+                    url: attachmentData.url,
+                };
+            }));
+        }).catch((err) => {
+            console.error(err);
+            reject(err);
+            return;
+        });
+    });
+};
+
+export const getAttachmentDocsForTask = (boardId: string, listId: string, taskId: string): Promise<DocumentSnapshot[]> => {
+    return new Promise((resolve, reject) => {
+        if (boardId === "" || boardId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        if (listId === "" || listId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "List's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        if (taskId === "" || taskId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Task's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        admin.firestore().collection("attachments").get().then((querySnap) => {
+            resolve(querySnap.docs.filter(doc => {
+                const docData = doc.data();
+                return docData.boardId === boardId && docData.listId === listId && docData.taskId === taskId;
+            }));
+        }).catch((err) => {
+            console.error(err);
+            reject(err);
+            return;
+        });
+    });
+};
+
+export const getAttachmentDocsForBoard = (boardId: string): Promise<DocumentSnapshot[]> => {
+    return new Promise((resolve, reject) => {
+        if (boardId === "" || boardId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        admin.firestore().collection("attachments").get().then((querySnap) => {
+            resolve(querySnap.docs.filter(doc => {
+                const docData = doc.data();
+                return docData.boardId === boardId;
+            }));
+        }).catch((err) => {
+            console.error(err);
+            reject(err);
+            return;
+        });
+    });
+};
+
+export const getAttachmentDocsForList = (boardId: string, listId: string): Promise<DocumentSnapshot[]> => {
+    return new Promise((resolve, reject) => {
+        if (boardId === "" || boardId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        if (listId === "" || listId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "List's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        admin.firestore().collection("attachments").get().then((querySnap) => {
+            resolve(querySnap.docs.filter(doc => {
+                const docData = doc.data();
+                return docData.boardId === boardId && docData.listId === listId;
+            }));
+        }).catch((err) => {
+            console.error(err);
+            reject(err);
+            return;
+        });
     });
 };

@@ -1,7 +1,8 @@
 import * as admin from "firebase-admin";
-import { deleteSubcollectionsService } from "./deleteSubcollections";
-import { getBoardSnap, getPrevCurrentNextListSnaps, isOwner } from "./dbUtils";
-import { IDeleteListResponse } from "../dtos/responses";
+import {deleteSubcollectionsService} from "./deleteSubcollections";
+import {getBoardSnap, getPrevCurrentNextListSnaps, isOwner} from "./dbUtils";
+import {IDeleteListResponse} from "../dtos/responses";
+import {deleteAttachmentsForList} from "./deleteAttachments";
 
 export const deleteListService = (boardId: string, listId: string, userId: string): Promise<IDeleteListResponse> => {
 
@@ -37,7 +38,7 @@ export const deleteListService = (boardId: string, listId: string, userId: strin
         const response: IDeleteListResponse = {
             boardId: boardId,
             listId: listId,
-        }
+        };
 
         getBoardSnap(boardId, userId).then((boardSnap) => {
             if (!isOwner(boardSnap, userId)) {
@@ -49,18 +50,18 @@ export const deleteListService = (boardId: string, listId: string, userId: strin
                 return;
             }
 
-            getPrevCurrentNextListSnaps(boardSnap, listId).then(({ prev, curr, next }) => {
+            getPrevCurrentNextListSnaps(boardSnap, listId).then(({prev, curr, next}) => {
                 const batch = admin.firestore().batch();
 
                 if (prev !== null && next !== null) { //both exist
-                    batch.update(prev.ref, { nextListId: next.id });
-                    batch.update(next.ref, { prevListId: next.id });
+                    batch.update(prev.ref, {nextListId: next.id});
+                    batch.update(next.ref, {prevListId: next.id});
                     batch.delete(curr.ref);
                 } else if (prev !== null && next === null) { // only next exists
-                    batch.update(prev.ref, { nextListId: "" });
+                    batch.update(prev.ref, {nextListId: ""});
                     batch.delete(curr.ref);
                 } else if (prev === null && next !== null) { // only prev exists
-                    batch.update(next.ref, { prevListId: "" });
+                    batch.update(next.ref, {prevListId: ""});
                     batch.delete(curr.ref);
                 } else if (prev === null && next === null) { // both dont exist
                     batch.delete(curr.ref);
@@ -68,6 +69,7 @@ export const deleteListService = (boardId: string, listId: string, userId: strin
 
                 batch.commit().then(() => {
                     resolve(response);
+                    deleteAttachmentsForList(boardId, listId);
                     deleteSubcollectionsService(curr);
                     return;
                 }).catch((err) => {
@@ -98,4 +100,4 @@ export const deleteListService = (boardId: string, listId: string, userId: strin
             return;
         });
     });
-}
+};

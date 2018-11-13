@@ -1,7 +1,7 @@
-import { getBoardSnap, getListSnap, isOwner } from "./dbUtils";
-import { ITask } from "../dtos/ITask";
+import {getBoardSnap, getListSnap, isOwner} from "./dbUtils";
+import {ITask} from "../dtos/ITask";
 import * as admin from "firebase-admin";
-import { ICreateTaskResponse } from "../dtos/responses";
+import {ICreateTaskResponse} from "../dtos/responses";
 
 export const createTaskService = (boardId: string, listId: string, taskName: string, userId: string): Promise<ICreateTaskResponse> => {
     return new Promise((resolve, reject) => {
@@ -72,18 +72,18 @@ export const createTaskService = (boardId: string, listId: string, taskName: str
                             listId: listId,
                             nextTaskId: "",
                             prevTaskId: "",
-                        }
+                        };
 
                         newTaskRef.set(newTaskData).then(() => {
                             const createdTask: ITask = {
-                                ...newTaskData, id: newTaskRef.id
-                            }
+                                ...newTaskData, id: newTaskRef.id, attachments: [],
+                            };
 
                             const response: ICreateTaskResponse = {
                                 boardId: boardId,
                                 listId: listId,
                                 task: createdTask,
-                            }
+                            };
 
                             resolve(response);
                         }).catch((err) => {
@@ -103,22 +103,22 @@ export const createTaskService = (boardId: string, listId: string, taskName: str
                             listId: listId,
                             nextTaskId: "",
                             prevTaskId: lastTask.id,
-                        }
+                        };
 
                         const batch = admin.firestore().batch();
-                        batch.update(lastTask, { nextTaskId: newTaskRef.id });
+                        batch.update(lastTask, {nextTaskId: newTaskRef.id});
                         batch.set(newTaskRef, newTaskData);
 
                         batch.commit().then(() => {
                             const createdTask: ITask = {
-                                ...newTaskData, id: newTaskRef.id
-                            }
+                                ...newTaskData, id: newTaskRef.id, attachments: [],
+                            };
 
                             const response: ICreateTaskResponse = {
                                 boardId: boardId,
                                 listId: listId,
                                 task: createdTask,
-                            }
+                            };
 
                             resolve(response);
                         }).catch((err) => {

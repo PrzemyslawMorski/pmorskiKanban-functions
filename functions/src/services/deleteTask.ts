@@ -1,7 +1,8 @@
-import { getBoardSnap, getListSnap, getPrevCurrentNextTaskSnaps, isOwner } from "./dbUtils";
+import {getBoardSnap, getListSnap, getPrevCurrentNextTaskSnaps, isOwner} from "./dbUtils";
 import * as admin from "firebase-admin";
-import { deleteSubcollectionsService } from "./deleteSubcollections";
-import { IDeleteTaskResponse } from "../dtos/responses";
+import {deleteSubcollectionsService} from "./deleteSubcollections";
+import {IDeleteTaskResponse} from "../dtos/responses";
+import {deleteAttachmentsForTask} from "./deleteAttachments";
 
 export const deleteTaskService = (boardId: string, listId: string, taskId: string, userId: string): Promise<IDeleteTaskResponse> => {
     return new Promise((resolve, reject) => {
@@ -52,19 +53,19 @@ export const deleteTaskService = (boardId: string, listId: string, taskId: strin
             }
 
             getListSnap(boardSnap, listId).then((listSnap) => {
-                getPrevCurrentNextTaskSnaps(listSnap, taskId).then(({ prev, curr, next }) => {
+                getPrevCurrentNextTaskSnaps(listSnap, taskId).then(({prev, curr, next}) => {
 
                     const batch = admin.firestore().batch();
 
                     if (prev !== null && next !== null) { //both exist
-                        batch.update(prev.ref, { nextTaskId: next.id });
-                        batch.update(next.ref, { prevTaskId: prev.id });
+                        batch.update(prev.ref, {nextTaskId: next.id});
+                        batch.update(next.ref, {prevTaskId: prev.id});
                         batch.delete(curr.ref);
                     } else if (prev === null && next !== null) { // first task deleted
-                        batch.update(next.ref, { prevTaskId: "" });
+                        batch.update(next.ref, {prevTaskId: ""});
                         batch.delete(curr.ref);
                     } else if (prev !== null && next === null) { // last task deleted
-                        batch.update(prev.ref, { nextTaskId: "" });
+                        batch.update(prev.ref, {nextTaskId: ""});
                         batch.delete(curr.ref);
                     } else if (prev === null && next === null) { // only task deleted
                         batch.delete(curr.ref);
@@ -78,6 +79,7 @@ export const deleteTaskService = (boardId: string, listId: string, taskId: strin
                         };
 
                         resolve(response);
+                        deleteAttachmentsForTask(boardId, listId, taskId);
                         deleteSubcollectionsService(curr);
                     }).catch((err) => {
                         console.log(err);
