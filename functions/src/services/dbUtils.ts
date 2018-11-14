@@ -64,6 +64,7 @@ export const getListSnap = (boardSnap: DocumentSnapshot, listId: string): Promis
             if (listDocSnap.exists) {
                 resolve(listDocSnap);
             } else {
+                console.log(listId);
                 const rejectResponse = {
                     status: 'not-found',
                     message: "List with supplied id doesn't exist.",
@@ -300,7 +301,7 @@ export const getViewers = (userIds: string[]): Promise<IUser[]> => {
     });
 };
 
-export const getAttachments = (boardId: string): Promise<IAttachment[]> => {
+export const getAttachmentsToDisplay = (boardId: string): Promise<IAttachment[]> => {
     return new Promise((resolve, reject) => {
         if (boardId === "" || boardId === undefined) {
             const errorResponse = {
@@ -312,7 +313,7 @@ export const getAttachments = (boardId: string): Promise<IAttachment[]> => {
         }
 
         admin.firestore().collection("attachments").get().then((querySnap) => {
-            resolve(querySnap.docs.filter(doc => doc.data().boardId === boardId).map((attachmentDoc) => {
+            resolve(querySnap.docs.filter(doc => doc.data().boardId === boardId && doc.data().url !== "").map((attachmentDoc) => {
                 const attachmentData = attachmentDoc.data();
                 const attachmentId = attachmentDoc.id;
                 return {
@@ -366,6 +367,64 @@ export const getAttachmentDocsForTask = (boardId: string, listId: string, taskId
                 const docData = doc.data();
                 return docData.boardId === boardId && docData.listId === listId && docData.taskId === taskId;
             }));
+        }).catch((err) => {
+            console.error(err);
+            reject(err);
+            return;
+        });
+    });
+};
+
+export const getAttachmentSnap = (boardId: string, listId: string, taskId: string, attachmentId: string): Promise<DocumentSnapshot> => {
+    return new Promise((resolve, reject) => {
+        if (boardId === "" || boardId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        if (listId === "" || listId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "List's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        if (taskId === "" || taskId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Task's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        if (attachmentId === "" || attachmentId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Attachment's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        admin.firestore().collection("attachments").doc(attachmentId).get().then((attachmentSnap) => {
+            if (attachmentSnap.data().boardId === boardId && attachmentSnap.data().listId === listId && attachmentSnap.data().taskId === taskId) {
+                resolve(attachmentSnap);
+                return;
+            } else {
+                const errorResponse = {
+                    status: "invalid-argument",
+                    message: "Attachment with supplied data doesn't exist.",
+                };
+                reject(errorResponse);
+                return;
+            }
         }).catch((err) => {
             console.error(err);
             reject(err);

@@ -13,6 +13,7 @@ import {renameListService} from "./services/renameList";
 import {createTaskService} from "./services/createTask";
 import {deleteTaskService} from "./services/deleteTask";
 import {
+    IAddAttachmentRequest,
     IAddViewerRequest,
     IChangeTaskDescriptionRequest,
     ICreateBoardRequest,
@@ -25,11 +26,13 @@ import {
     IGetGravatarUrlRequest,
     IMoveListRequest,
     IMoveTaskRequest,
+    IRemoveAttachmentRequest,
     IRemoveViewerRequest,
     IRenameBoardRequest,
     IRenameListRequest,
     IRenameTaskRequest,
     ISearchUsersRequest,
+    ISetAttachmentUrlRequest,
     IUnsubBoardRequest
 } from "./dtos/requests";
 import {renameTaskService} from "./services/renameTask";
@@ -41,6 +44,8 @@ import {removeViewerService} from "./services/removeViewer";
 import {unsubBoardService} from "./services/unsubBoard";
 import {searchUsersByEmailService} from "./services/searchUsersByEmail";
 import {onAttachmentDeletedService} from "./services/onAttachmentDeleted";
+import {addAttachmentService, setAttachmentUrlService} from "./services/addAttachment";
+import {removeAttachmentService} from "./services/removeAttachment";
 
 const serviceAccount = require("./pmorskikanban-firebase-adminsdk");
 admin.initializeApp({
@@ -457,8 +462,63 @@ export const onTaskAttachmentDelete = functions.firestore.document("attachments/
     onAttachmentDeletedService(snap);
 });
 
-// export const addAttachment = functions.https.onCall((data: IAddAttachmentRequest, context: CallableContext) => {
-//     return addAttachmentService(data, context.auth.uid).then(response => {
+export const addAttachment = functions.https.onCall((data: IAddAttachmentRequest, context: CallableContext) => {
+    return addAttachmentService(data, context.auth.uid).then(response => {
+        return response;
+    }).catch((err) => {
+        console.log('catch in index.ts');
+        console.log('error status: ' + err.status);
+        console.log('error message: ' + err.message);
+        throw new functions.https.HttpsError(err.status, err.message);
+    });
+});
+
+// export const addAttachmentTest = functions.https.onCall((data: IAddAttachmentRequest & { userId: string }) => {
+//     return addAttachmentService(data, data.userId).then(response => {
+//         return response;
+//     }).catch((err) => {
+//         console.log('catch in index.ts');
+//         console.log('error status: ' + err.status);
+//         console.log('error message: ' + err.message);
+//         throw new functions.https.HttpsError(err.status, err.message);
+//     });
+// });
+
+export const removeAttachment = functions.https.onCall((data: IRemoveAttachmentRequest, context: CallableContext) => {
+    return removeAttachmentService(data, context.auth.uid).then(response => {
+        return response;
+    }).catch((err) => {
+        console.log('catch in index.ts');
+        console.log('error status: ' + err.status);
+        console.log('error message: ' + err.message);
+        throw new functions.https.HttpsError(err.status, err.message);
+    });
+});
+
+// export const removeAttachmentTest = functions.https.onCall((data: IRemoveAttachmentRequest & { userId: string }) => {
+//     return removeAttachmentService(data, data.userId).then(response => {
+//         return response;
+//     }).catch((err) => {
+//         console.log('catch in index.ts');
+//         console.log('error status: ' + err.status);
+//         console.log('error message: ' + err.message);
+//         throw new functions.https.HttpsError(err.status, err.message);
+//     });
+// });
+
+export const setAttachmentUrl = functions.https.onCall((data: ISetAttachmentUrlRequest, context: CallableContext) => {
+    return setAttachmentUrlService(data, context.auth.uid).then(response => {
+        return response;
+    }).catch((err) => {
+        console.log('catch in index.ts');
+        console.log('error status: ' + err.status);
+        console.log('error message: ' + err.message);
+        throw new functions.https.HttpsError(err.status, err.message);
+    });
+});
+
+// export const setAttachmentUrlTest = functions.https.onCall((data: ISetAttachmentUrlRequest & { userId: string }) => {
+//     return setAttachmentUrlService(data, data.userId).then(response => {
 //         return response;
 //     }).catch((err) => {
 //         console.log('catch in index.ts');

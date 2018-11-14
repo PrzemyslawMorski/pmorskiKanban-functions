@@ -2,7 +2,7 @@ import {IBoard} from "../dtos/IBoard";
 import {ITask} from "../dtos/ITask";
 import {IList} from "../dtos/IList";
 import {IGetBoardResponse} from "../dtos/responses";
-import {getAttachments, getBoardSnap, getViewers, isOwner, isViewer} from "./dbUtils";
+import {getAttachmentsToDisplay, getBoardSnap, getViewers, isOwner, isViewer} from "./dbUtils";
 import {IUser} from "../dtos/IUser";
 import {IAttachment} from "../dtos/IAttachment";
 
@@ -36,7 +36,7 @@ export const getBoardService = (boardId: string, userId: string): Promise<IGetBo
                 return;
             }
 
-            getAttachments(boardId).then((boardAttachments: IAttachment[]) => {
+            getAttachmentsToDisplay(boardId).then((boardAttachments: IAttachment[]) => {
                 const listsCollection = boardSnap.ref.collection("lists");
 
                 listsCollection.get().then(listsQuerySnap => {

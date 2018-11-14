@@ -101,10 +101,23 @@ export interface IUnsubBoardRequest {
 }
 
 export interface IAddAttachmentRequest {
+    name: string;
     boardId: string;
     listId: string;
     taskId: string;
-    attachmentName: string;
-    attachmentContent: any;
-    attachmentType: string;
+}
+
+export interface IRemoveAttachmentRequest {
+    boardId: string;
+    listId: string;
+    taskId: string;
+    attachmentId: string;
+}
+
+export interface ISetAttachmentUrlRequest {
+    boardId: string;
+    listId: string;
+    taskId: string;
+    attachmentId: string;
+    url: string;
 }

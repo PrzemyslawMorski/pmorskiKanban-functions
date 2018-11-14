@@ -3,6 +3,7 @@ import {IBoard} from "./IBoard";
 import {IList} from "./IList";
 import {ITask} from "./ITask";
 import {IUser} from "./IUser";
+import {IAttachment} from "./IAttachment";
 
 export interface IGetBoardMiniaturesResponse {
     boardMiniatures: IBoardMiniature[] | null;
@@ -103,14 +104,18 @@ export interface IUnsubBoardResponse {
     userId: string;
 }
 
-export interface IAddAttachmentResponse {
+export interface ISetAttachmentUrlResponse {
+    attachment: IAttachment;
+}
+
+export interface IRemoveAttachmentResponse {
     boardId: string;
     listId: string;
     taskId: string;
     attachmentId: string;
 }
 
-export interface IRemoveAttachmentResponse {
+export interface ICreateAttachmentResponse {
     boardId: string;
     listId: string;
     taskId: string;
