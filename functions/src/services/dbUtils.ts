@@ -356,7 +356,7 @@ export const getCommentsToDisplay = (boardId: string): Promise<IComment[]> => {
                     id: commentDoc.id,
                     authorId: commentData.authorId,
                     content: commentData.content,
-                    timestamp: commentData.dateAdded,
+                    timestamp: commentData.timestamp,
                     boardId: commentData.boardId,
                     listId: commentData.listId,
                     taskId: commentData.taskId,
