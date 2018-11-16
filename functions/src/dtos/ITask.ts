@@ -1,4 +1,5 @@
 import {IAttachment} from "./IAttachment";
+import {IComment} from "./IComment";
 
 export interface ITask {
     readonly id: string;
@@ -8,4 +9,5 @@ export interface ITask {
     readonly prevTaskId: string;
     readonly nextTaskId: string;
     readonly attachments: IAttachment[];
+    readonly comments: IComment[];
 }

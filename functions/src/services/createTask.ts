@@ -76,7 +76,7 @@ export const createTaskService = (boardId: string, listId: string, taskName: str
 
                         newTaskRef.set(newTaskData).then(() => {
                             const createdTask: ITask = {
-                                ...newTaskData, id: newTaskRef.id, attachments: [],
+                                ...newTaskData, id: newTaskRef.id, attachments: [], comments: [],
                             };
 
                             const response: ICreateTaskResponse = {
@@ -111,7 +111,7 @@ export const createTaskService = (boardId: string, listId: string, taskName: str
 
                         batch.commit().then(() => {
                             const createdTask: ITask = {
-                                ...newTaskData, id: newTaskRef.id, attachments: [],
+                                ...newTaskData, id: newTaskRef.id, attachments: [], comments: [],
                             };
 
                             const response: ICreateTaskResponse = {

@@ -3,6 +3,7 @@ import {deleteSubcollectionsService} from "./deleteSubcollections";
 import {getBoardSnap, isOwner} from "./dbUtils";
 import {IDeleteBoardResponse} from "../dtos/responses";
 import {deleteAttachmentsForBoard} from "./deleteAttachments";
+import {deleteCommentsForBoard} from "./deleteComments";
 
 export const deleteBoardService = (boardId: string, userId: string): Promise<IDeleteBoardResponse> => {
     return new Promise((resolve, reject) => {
@@ -43,6 +44,7 @@ export const deleteBoardService = (boardId: string, userId: string): Promise<IDe
 
             boardDoc.delete().then(() => {
                 deleteAttachmentsForBoard(boardId);
+                deleteCommentsForBoard(boardId);
                 deleteSubcollectionsService(boardSnap);
                 resolve(response);
                 return;

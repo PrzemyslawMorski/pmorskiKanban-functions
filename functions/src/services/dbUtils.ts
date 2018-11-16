@@ -2,6 +2,8 @@ import {DocumentSnapshot} from "firebase-functions/lib/providers/firestore";
 import * as admin from "firebase-admin";
 import {IUser} from "../dtos/IUser";
 import {IAttachment} from "../dtos/IAttachment";
+import {ICommentDb} from "../dtos/ICommentDb";
+import {IComment} from "../dtos/IComment";
 import UserRecord = admin.auth.UserRecord;
 
 export const isOwner = (boardSnap: DocumentSnapshot, userId: string): boolean => {
@@ -333,6 +335,69 @@ export const getAttachmentsToDisplay = (boardId: string): Promise<IAttachment[]>
     });
 };
 
+export const getCommentsToDisplay = (boardId: string): Promise<IComment[]> => {
+    return new Promise((resolve, reject) => {
+        if (boardId === "" || boardId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        admin.firestore().collection("comments").get().then((querySnap) => {
+            const authors: Promise<UserRecord>[] = [];
+
+            const icommentsDb: ICommentDb[] = querySnap.docs.filter(doc => doc.data().boardId === boardId).map((commentDoc) => {
+                const commentData = commentDoc.data();
+                authors.push(admin.auth().getUser(commentData.authorId));
+                return {
+                    id: commentDoc.id,
+                    authorId: commentData.authorId,
+                    content: commentData.content,
+                    timestamp: commentData.dateAdded,
+                    boardId: commentData.boardId,
+                    listId: commentData.listId,
+                    taskId: commentData.taskId,
+                };
+            });
+
+            Promise.all(authors).then((authorsData) => {
+                resolve(icommentsDb.map((commentDb) => {
+                    const firebaseAuthor = authorsData.find((authorData => authorData.uid === commentDb.authorId));
+
+                    const author: IUser = {
+                        uid: firebaseAuthor.uid,
+                        email: firebaseAuthor.email,
+                        photoURL: firebaseAuthor.photoURL,
+                        displayName: firebaseAuthor.displayName,
+                    };
+
+                    return {
+                        id: commentDb.id,
+                        author: author,
+                        content: commentDb.content,
+                        timestamp: commentDb.timestamp,
+                        boardId: commentDb.boardId,
+                        listId: commentDb.listId,
+                        taskId: commentDb.taskId,
+                    };
+                }));
+                return;
+            }).catch((err) => {
+                console.error(err);
+                reject(err);
+                return;
+            });
+        }).catch((err) => {
+            console.error(err);
+            reject(err);
+            return;
+        });
+    });
+};
+
 export const getAttachmentDocsForTask = (boardId: string, listId: string, taskId: string): Promise<DocumentSnapshot[]> => {
     return new Promise((resolve, reject) => {
         if (boardId === "" || boardId === undefined) {
@@ -478,6 +543,163 @@ export const getAttachmentDocsForList = (boardId: string, listId: string): Promi
         }
 
         admin.firestore().collection("attachments").get().then((querySnap) => {
+            resolve(querySnap.docs.filter(doc => {
+                const docData = doc.data();
+                return docData.boardId === boardId && docData.listId === listId;
+            }));
+        }).catch((err) => {
+            console.error(err);
+            reject(err);
+            return;
+        });
+    });
+};
+
+export const getCommentDocsForTask = (boardId: string, listId: string, taskId: string): Promise<DocumentSnapshot[]> => {
+    return new Promise((resolve, reject) => {
+        if (boardId === "" || boardId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        if (listId === "" || listId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "List's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        if (taskId === "" || taskId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Task's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        admin.firestore().collection("comments").get().then((querySnap) => {
+            resolve(querySnap.docs.filter(doc => {
+                const docData = doc.data();
+                return docData.boardId === boardId && docData.listId === listId && docData.taskId === taskId;
+            }));
+        }).catch((err) => {
+            console.error(err);
+            reject(err);
+            return;
+        });
+    });
+};
+
+export const getCommentSnap = (boardId: string, listId: string, taskId: string, attachmentId: string): Promise<DocumentSnapshot> => {
+    return new Promise((resolve, reject) => {
+        if (boardId === "" || boardId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        if (listId === "" || listId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "List's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        if (taskId === "" || taskId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Task's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        if (attachmentId === "" || attachmentId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Comment's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        admin.firestore().collection("comments").doc(attachmentId).get().then((attachmentSnap) => {
+            if (attachmentSnap.data().boardId === boardId && attachmentSnap.data().listId === listId && attachmentSnap.data().taskId === taskId) {
+                resolve(attachmentSnap);
+                return;
+            } else {
+                const errorResponse = {
+                    status: "invalid-argument",
+                    message: "Comment with supplied data doesn't exist.",
+                };
+                reject(errorResponse);
+                return;
+            }
+        }).catch((err) => {
+            console.error(err);
+            reject(err);
+            return;
+        });
+    });
+};
+
+export const getCommentDocsForBoard = (boardId: string): Promise<DocumentSnapshot[]> => {
+    return new Promise((resolve, reject) => {
+        if (boardId === "" || boardId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        admin.firestore().collection("comments").get().then((querySnap) => {
+            resolve(querySnap.docs.filter(doc => {
+                const docData = doc.data();
+                return docData.boardId === boardId;
+            }));
+        }).catch((err) => {
+            console.error(err);
+            reject(err);
+            return;
+        });
+    });
+};
+
+export const getCommentDocsForList = (boardId: string, listId: string): Promise<DocumentSnapshot[]> => {
+    return new Promise((resolve, reject) => {
+        if (boardId === "" || boardId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "Board's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        if (listId === "" || listId === undefined) {
+            const errorResponse = {
+                status: "invalid-argument",
+                message: "List's id was empty or wasn't supplied.",
+            };
+            reject(errorResponse);
+            return;
+        }
+
+        admin.firestore().collection("comments").get().then((querySnap) => {
             resolve(querySnap.docs.filter(doc => {
                 const docData = doc.data();
                 return docData.boardId === boardId && docData.listId === listId;

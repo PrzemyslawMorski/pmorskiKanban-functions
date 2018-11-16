@@ -121,3 +121,25 @@ export interface ISetAttachmentUrlRequest {
     attachmentId: string;
     url: string;
 }
+
+export interface IAddCommentRequest {
+    boardId: string;
+    listId: string;
+    taskId: string;
+    content: string;
+}
+
+export interface IDeleteCommentRequest {
+    boardId: string;
+    listId: string;
+    taskId: string;
+    commentId: string;
+}
+
+export interface IEditCommentRequest {
+    boardId: string;
+    listId: string;
+    taskId: string;
+    commentId: string;
+    newContent: string;
+}

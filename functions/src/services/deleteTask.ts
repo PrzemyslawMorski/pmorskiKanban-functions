@@ -3,6 +3,7 @@ import * as admin from "firebase-admin";
 import {deleteSubcollectionsService} from "./deleteSubcollections";
 import {IDeleteTaskResponse} from "../dtos/responses";
 import {deleteAttachmentsForTask} from "./deleteAttachments";
+import {deleteCommentsForTask} from "./deleteComments";
 
 export const deleteTaskService = (boardId: string, listId: string, taskId: string, userId: string): Promise<IDeleteTaskResponse> => {
     return new Promise((resolve, reject) => {
@@ -80,6 +81,7 @@ export const deleteTaskService = (boardId: string, listId: string, taskId: strin
 
                         resolve(response);
                         deleteAttachmentsForTask(boardId, listId, taskId);
+                        deleteCommentsForTask(boardId, listId, taskId);
                         deleteSubcollectionsService(curr);
                     }).catch((err) => {
                         console.log(err);

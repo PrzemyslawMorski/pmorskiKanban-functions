@@ -3,6 +3,7 @@ import {deleteSubcollectionsService} from "./deleteSubcollections";
 import {getBoardSnap, getPrevCurrentNextListSnaps, isOwner} from "./dbUtils";
 import {IDeleteListResponse} from "../dtos/responses";
 import {deleteAttachmentsForList} from "./deleteAttachments";
+import {deleteCommentsForList} from "./deleteComments";
 
 export const deleteListService = (boardId: string, listId: string, userId: string): Promise<IDeleteListResponse> => {
 
@@ -70,6 +71,7 @@ export const deleteListService = (boardId: string, listId: string, userId: strin
                 batch.commit().then(() => {
                     resolve(response);
                     deleteAttachmentsForList(boardId, listId);
+                    deleteCommentsForList(boardId, listId);
                     deleteSubcollectionsService(curr);
                     return;
                 }).catch((err) => {

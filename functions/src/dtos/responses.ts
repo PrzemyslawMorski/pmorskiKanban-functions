@@ -4,6 +4,7 @@ import {IList} from "./IList";
 import {ITask} from "./ITask";
 import {IUser} from "./IUser";
 import {IAttachment} from "./IAttachment";
+import {IComment} from "./IComment";
 
 export interface IGetBoardMiniaturesResponse {
     boardMiniatures: IBoardMiniature[] | null;
@@ -120,4 +121,19 @@ export interface ICreateAttachmentResponse {
     listId: string;
     taskId: string;
     attachmentId: string;
+}
+
+export interface IAddCommentResponse {
+    comment: IComment;
+}
+
+export interface IDeleteCommentResponse {
+    boardId: string;
+    listId: string;
+    taskId: string;
+    commentId: string;
+}
+
+export interface IEditCommentResponse {
+    comment: IComment;
 }

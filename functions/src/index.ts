@@ -14,14 +14,17 @@ import {createTaskService} from "./services/createTask";
 import {deleteTaskService} from "./services/deleteTask";
 import {
     IAddAttachmentRequest,
+    IAddCommentRequest,
     IAddViewerRequest,
     IChangeTaskDescriptionRequest,
     ICreateBoardRequest,
     ICreateListRequest,
     ICreateTaskRequest,
     IDeleteBoardRequest,
+    IDeleteCommentRequest,
     IDeleteListRequest,
     IDeleteTaskRequest,
+    IEditCommentRequest,
     IGetBoardRequest,
     IGetGravatarUrlRequest,
     IMoveListRequest,
@@ -46,6 +49,9 @@ import {searchUsersByEmailService} from "./services/searchUsersByEmail";
 import {onAttachmentDeletedService} from "./services/onAttachmentDeleted";
 import {addAttachmentService, setAttachmentUrlService} from "./services/addAttachment";
 import {removeAttachmentService} from "./services/removeAttachment";
+import {removeCommentService} from "./services/deleteComment";
+import {addCommentService} from "./services/addComment";
+import {editCommentService} from "./services/editComment";
 
 const serviceAccount = require("./pmorskikanban-firebase-adminsdk");
 admin.initializeApp({
@@ -519,6 +525,72 @@ export const setAttachmentUrl = functions.https.onCall((data: ISetAttachmentUrlR
 
 // export const setAttachmentUrlTest = functions.https.onCall((data: ISetAttachmentUrlRequest & { userId: string }) => {
 //     return setAttachmentUrlService(data, data.userId).then(response => {
+//         return response;
+//     }).catch((err) => {
+//         console.log('catch in index.ts');
+//         console.log('error status: ' + err.status);
+//         console.log('error message: ' + err.message);
+//         throw new functions.https.HttpsError(err.status, err.message);
+//     });
+// });
+
+export const addComment = functions.https.onCall((data: IAddCommentRequest, context: CallableContext) => {
+    return addCommentService(data, context.auth.uid).then(response => {
+        return response;
+    }).catch((err) => {
+        console.log('catch in index.ts');
+        console.log('error status: ' + err.status);
+        console.log('error message: ' + err.message);
+        throw new functions.https.HttpsError(err.status, err.message);
+    });
+});
+
+// export const addCommentTest = functions.https.onCall((data: IAddCommentRequest & { userId: string }) => {
+//     return addCommentService(data, data.userId).then(response => {
+//         return response;
+//     }).catch((err) => {
+//         console.log('catch in index.ts');
+//         console.log('error status: ' + err.status);
+//         console.log('error message: ' + err.message);
+//         throw new functions.https.HttpsError(err.status, err.message);
+//     });
+// });
+
+export const deleteComment = functions.https.onCall((data: IDeleteCommentRequest, context: CallableContext) => {
+    return removeCommentService(data, context.auth.uid).then(response => {
+        return response;
+    }).catch((err) => {
+        console.log('catch in index.ts');
+        console.log('error status: ' + err.status);
+        console.log('error message: ' + err.message);
+        throw new functions.https.HttpsError(err.status, err.message);
+    });
+});
+
+// export const deleteCommentTest = functions.https.onCall((data: IDeleteCommentRequest & { userId: string }) => {
+//     return removeCommentService(data, data.userId).then(response => {
+//         return response;
+//     }).catch((err) => {
+//         console.log('catch in index.ts');
+//         console.log('error status: ' + err.status);
+//         console.log('error message: ' + err.message);
+//         throw new functions.https.HttpsError(err.status, err.message);
+//     });
+// });
+
+export const editComment = functions.https.onCall((data: IEditCommentRequest, context: CallableContext) => {
+    return editCommentService(data, context.auth.uid).then(response => {
+        return response;
+    }).catch((err) => {
+        console.log('catch in index.ts');
+        console.log('error status: ' + err.status);
+        console.log('error message: ' + err.message);
+        throw new functions.https.HttpsError(err.status, err.message);
+    });
+});
+
+// export const editCommentTest = functions.https.onCall((data: IEditCommentRequest & { userId: string }) => {
+//     return editCommentService(data, data.userId).then(response => {
 //         return response;
 //     }).catch((err) => {
 //         console.log('catch in index.ts');
