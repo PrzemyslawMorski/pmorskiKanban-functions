@@ -1,166 +1,216 @@
-import {IBoard} from "../dtos/IBoard";
-import {ITask} from "../dtos/ITask";
-import {IList} from "../dtos/IList";
-import {IGetBoardResponse} from "../dtos/responses";
-import {getAttachmentsToDisplay, getBoardSnap, getCommentsToDisplay, getViewers, isOwner, isViewer} from "./dbUtils";
-import {IUser} from "../dtos/IUser";
-import {IAttachment} from "../dtos/IAttachment";
-import {IComment} from "../dtos/IComment";
+import { IBoard } from "../dtos/IBoard";
+import { ITask } from "../dtos/ITask";
+import { IList } from "../dtos/IList";
+import { IGetBoardResponse } from "../dtos/responses";
+import {
+  getAttachmentsToDisplay,
+  getBoardSnap,
+  getCommentsToDisplay,
+  getViewers,
+  isOwner,
+  isViewer,
+} from "./dbUtils";
+import { IUser } from "../dtos/IUser";
+import { IAttachment } from "../dtos/IAttachment";
+import { IComment } from "../dtos/IComment";
 
-export const getBoardService = (boardId: string, userId: string): Promise<IGetBoardResponse> => {
-    return new Promise((resolve, reject) => {
-        if (boardId === "" || boardId === undefined) {
-            const rejectResponse = {
-                status: 'invalid-argument',
-                message: "Board's id was empty or wasn't supplied.",
-            };
-            reject(rejectResponse);
-            return;
+export const getBoardService = (
+  boardId: string,
+  userId: string
+): Promise<IGetBoardResponse> => {
+  return new Promise((resolve, reject) => {
+    if (boardId === "" || boardId === undefined) {
+      const rejectResponse = {
+        status: "invalid-argument",
+        message: "Board's id was empty or wasn't supplied.",
+      };
+      reject(rejectResponse);
+      return;
+    }
+
+    if (userId === "" || userId === undefined) {
+      const rejectResponse = {
+        status: "invalid-argument",
+        message: "User's id was empty or wasn't supplied.",
+      };
+      reject(rejectResponse);
+      return;
+    }
+
+    getBoardSnap(boardId, userId)
+      .then((boardSnap) => {
+        if (!isViewer(boardSnap, userId) && !isOwner(boardSnap, userId)) {
+          const rejectResponse = {
+            status: "permission-denied",
+            message: "You don't have access to this board.",
+          };
+          reject(rejectResponse);
+          return;
         }
 
-        if (userId === "" || userId === undefined) {
-            const rejectResponse = {
-                status: 'invalid-argument',
-                message: "User's id was empty or wasn't supplied.",
-            };
-            reject(rejectResponse);
-            return;
-        }
+        getAttachmentsToDisplay(boardId)
+          .then((boardAttachments: IAttachment[]) => {
+            getCommentsToDisplay(boardId)
+              .then((boardComments: IComment[]) => {
+                const listsCollection = boardSnap.ref.collection("lists");
 
-        getBoardSnap(boardId, userId).then((boardSnap) => {
-            if (!isViewer(boardSnap, userId) && !isOwner(boardSnap, userId)) {
-                const rejectResponse = {
-                    status: 'permission-denied',
-                    message: "You don't have access to this board.",
-                };
-                reject(rejectResponse);
-                return;
-            }
+                listsCollection
+                  .get()
+                  .then((listsQuerySnap) => {
+                    const getListsTasksCollections: Promise<FirebaseFirestore.QuerySnapshot>[] =
+                      [];
+                    const lists: Array<IList> = [];
 
-            getAttachmentsToDisplay(boardId).then((boardAttachments: IAttachment[]) => {
-                getCommentsToDisplay(boardId).then((boardComments: IComment[]) => {
-                    const listsCollection = boardSnap.ref.collection("lists");
+                    listsQuerySnap.forEach((listSnapshot) => {
+                      getListsTasksCollections.push(
+                        listSnapshot.ref.collection("tasks").get()
+                      );
 
-                    listsCollection.get().then(listsQuerySnap => {
-                        const getListsTasksCollections: Promise<FirebaseFirestore.QuerySnapshot>[] = [];
-                        const lists: Array<IList> = [];
+                      const listData = listSnapshot.data();
+                      const list: IList = {
+                        id: listSnapshot.id,
+                        name: listData.name,
+                        boardId: boardSnap.id,
+                        nextListId: listData.nextListId,
+                        prevListId: listData.prevListId,
+                        tasks: [],
+                      };
 
-                        listsQuerySnap.forEach((listSnapshot) => {
-                            getListsTasksCollections.push(listSnapshot.ref.collection("tasks").get());
+                      lists.push(list);
+                    });
 
-                            const listData = listSnapshot.data();
-                            const list: IList = {
-                                id: listSnapshot.id,
-                                name: listData.name,
-                                boardId: boardSnap.id,
-                                nextListId: listData.nextListId,
-                                prevListId: listData.prevListId,
-                                tasks: []
+                    Promise.all(getListsTasksCollections)
+                      .then((taskCollectionSnaps) => {
+                        taskCollectionSnaps.forEach((taskCollection) => {
+                          taskCollection.forEach((taskSnap) => {
+                            const taskData = taskSnap.data();
+
+                            const taskAttachments = boardAttachments
+                              .filter(
+                                (attachment: IAttachment) =>
+                                  attachment.boardId === boardId
+                              )
+                              .filter(
+                                (attachment: IAttachment) =>
+                                  attachment.listId === taskData.listId
+                              )
+                              .filter(
+                                (attachment: IAttachment) =>
+                                  attachment.taskId === taskSnap.id
+                              );
+
+                            const taskComments = boardComments
+                              .filter(
+                                (comment: IComment) =>
+                                  comment.boardId === boardId
+                              )
+                              .filter(
+                                (comment: IComment) =>
+                                  comment.listId === taskData.listId
+                              )
+                              .filter(
+                                (comment: IComment) =>
+                                  comment.taskId === taskSnap.id
+                              )
+                              .sort((comment1, comment2) => {
+                                return comment1.timestamp - comment2.timestamp;
+                              });
+
+                            const task: ITask = {
+                              id: taskSnap.id,
+                              name: taskData.name,
+                              description: taskData.description,
+                              listId: taskData.listId,
+                              nextTaskId: taskData.nextTaskId,
+                              prevTaskId: taskData.prevTaskId,
+                              attachments: taskAttachments,
+                              comments: taskComments,
                             };
 
-                            lists.push(list);
+                            const list = lists.find(
+                              (someList) => someList.id === task.listId
+                            );
+
+                            if (list !== undefined) {
+                              list.tasks.push(task);
+                            }
+                          });
                         });
 
-                        Promise.all(getListsTasksCollections).then((taskCollectionSnaps) => {
-                            taskCollectionSnaps.forEach((taskCollection) => {
-                                taskCollection.forEach((taskSnap) => {
-                                    const taskData = taskSnap.data();
+                        getViewers(boardSnap.data().viewers)
+                          .then((viewers: IUser[]) => {
+                            const board: IBoard = {
+                              id: boardSnap.id,
+                              name: boardSnap.data().name,
+                              owner: isOwner(boardSnap, userId),
+                              lists,
+                              viewers,
+                            };
 
-                                    const taskAttachments = boardAttachments
-                                        .filter((attachment: IAttachment) => attachment.boardId === boardId)
-                                        .filter((attachment: IAttachment) => attachment.listId === taskData.listId)
-                                        .filter((attachment: IAttachment) => attachment.taskId === taskSnap.id);
-
-                                    const taskComments = boardComments
-                                        .filter((comment: IComment) => comment.boardId === boardId)
-                                        .filter((comment: IComment) => comment.listId === taskData.listId)
-                                        .filter((comment: IComment) => comment.taskId === taskSnap.id)
-                                        .sort((comment1, comment2) => {
-                                            return comment1.timestamp - comment2.timestamp;
-                                        });
-
-                                    const task: ITask = {
-                                        id: taskSnap.id,
-                                        name: taskData.name,
-                                        description: taskData.description,
-                                        listId: taskData.listId,
-                                        nextTaskId: taskData.nextTaskId,
-                                        prevTaskId: taskData.prevTaskId,
-                                        attachments: taskAttachments,
-                                        comments: taskComments,
-                                    };
-
-                                    const list = lists.find((someList) => someList.id === task.listId);
-
-                                    if (list !== undefined) {
-                                        list.tasks.push(task);
-                                    }
-                                });
-                            });
-
-                            getViewers(boardSnap.data().viewers).then((viewers: IUser[]) => {
-                                const board: IBoard = {
-                                    id: boardSnap.id,
-                                    name: boardSnap.data().name,
-                                    owner: isOwner(boardSnap, userId),
-                                    lists,
-                                    viewers,
-                                };
-
-                                resolve({board});
-                            }).catch(err => {
-                                console.error(err);
-                                const rejectResponse = {
-                                    status: 'internal',
-                                    message: "Board was not fetched. There is a problem with the database. Please try again later.",
-                                };
-                                reject(rejectResponse);
-                                return;
-                            });
-                        }).catch((err) => {
+                            resolve({ board });
+                          })
+                          .catch((err) => {
                             console.error(err);
                             const rejectResponse = {
-                                status: 'internal',
-                                message: "Board was not fetched. There is a problem with the database. Please try again later.",
+                              status: "internal",
+                              message:
+                                "Board was not fetched. There is a problem with the database. Please try again later.",
                             };
                             reject(rejectResponse);
                             return;
-                        });
-                    }).catch((err) => {
+                          });
+                      })
+                      .catch((err) => {
                         console.error(err);
                         const rejectResponse = {
-                            status: err.status,
-                            message: err.message,
+                          status: "internal",
+                          message:
+                            "Board was not fetched. There is a problem with the database. Please try again later.",
                         };
                         reject(rejectResponse);
                         return;
-                    });
-                }).catch((err) => {
+                      });
+                  })
+                  .catch((err) => {
                     console.error(err);
                     const rejectResponse = {
-                        status: 'internal',
-                        message: "Board was not fetched. There is a problem with the database. Please try again later.",
+                      status: err.status,
+                      message: err.message,
                     };
                     reject(rejectResponse);
                     return;
-                });
-            }).catch((err) => {
+                  });
+              })
+              .catch((err) => {
                 console.error(err);
                 const rejectResponse = {
-                    status: 'internal',
-                    message: "Board was not fetched. There is a problem with the database. Please try again later.",
+                  status: "internal",
+                  message:
+                    "Board was not fetched. There is a problem with the database. Please try again later.",
                 };
                 reject(rejectResponse);
                 return;
-            });
-        }).catch((err) => {
+              });
+          })
+          .catch((err) => {
             console.error(err);
             const rejectResponse = {
-                status: err.status,
-                message: err.message,
+              status: "internal",
+              message:
+                "Board was not fetched. There is a problem with the database. Please try again later.",
             };
             reject(rejectResponse);
             return;
-        });
-    });
+          });
+      })
+      .catch((err) => {
+        console.error(err);
+        const rejectResponse = {
+          status: err.status,
+          message: err.message,
+        };
+        reject(rejectResponse);
+        return;
+      });
+  });
 };
